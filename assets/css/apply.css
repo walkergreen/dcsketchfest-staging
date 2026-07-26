@@ -517,3 +517,49 @@ button[disabled] { opacity: .55; cursor: progress; }
   padding: .1rem .35rem;
   border-radius: 6px;
 }
+
+/* ----------------------------------------------------- staging tools --- */
+/* Only ever rendered on staging and localhost (see maybeShowStagingTools in
+   apply.js). Pinned bottom-left so it can't sit on top of the sticky save bar
+   or the submit button. */
+
+.staging-tools {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  background: var(--ink);
+  border: 3px solid var(--yellow);
+  border-radius: var(--radius-pill);
+  padding: .45rem .6rem .45rem .9rem;
+  box-shadow: 4px 4px 0 rgba(33, 27, 58, .35);
+}
+
+.staging-tools__tag {
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-size: .75rem;
+  color: var(--yellow);
+}
+
+.staging-tools__btn {
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--yellow);
+  color: var(--ink);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-pill);
+  padding: .3rem .8rem;
+}
+.staging-tools__btn:hover { background: var(--white); }
+.staging-tools__btn:focus-visible { outline: 3px solid var(--pink); outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .staging-tools { left: .5rem; right: .5rem; justify-content: center; }
+}

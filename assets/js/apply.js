@@ -560,7 +560,7 @@
      admin panel this way is obvious at a glance. */
   var TEST_ANSWERS = {
     team_name: 'TEST — delete me',
-    bio: 'TEST application generated with ?fill=1. Not a real team. Safe to delete.',
+    bio: 'TEST application created with the staging prefill tool. Not a real team. Safe to delete.',
     team_size: '4',
     home: 'Washington, DC',
     instagram: '@dcsketchfest',
@@ -602,11 +602,55 @@
     // The photo is genuinely required, so make a real one and push it through
     // the real upload endpoint rather than teaching the server to skip it.
     makePlaceholderPhoto()
-      .then(function (file) { handleFile(file); })
+      .then(function (file) {
+        /* Put the file on the input itself, not just through the handler, so
+           the field is really populated — otherwise the preview shows a photo
+           while `photoInput.files` is empty, which looks fine but isn't the
+           same state an applicant's browser would be in. */
+        try {
+          var dt = new DataTransfer();
+          dt.items.add(file);
+          photoInput.files = dt.files;
+        } catch (err) {
+          // Older Safari won't allow assigning files; the upload below still works.
+        }
+        handleFile(file);
+      })
       .catch(function () { setStatus('Could not generate a test photo', 'error'); });
 
     var submit = $('submit');
     if (submit) submit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* A visible prefill button, but only where it can't confuse an applicant:
+     staging and localhost. On dcsketchfest.com it never renders, so the real
+     form stays clean — `?fill=1` still works everywhere for anyone who knows
+     to type it. */
+  var STAGING_HOSTS = /^(staging\.dcsketchfest\.com|localhost|127\.0\.0\.1|.*\.local)$/i;
+
+  function maybeShowStagingTools() {
+    if (!STAGING_HOSTS.test(location.hostname)) return;
+
+    var bar = document.createElement('div');
+    bar.className = 'staging-tools';
+    bar.innerHTML =
+      '<span class="staging-tools__tag">Staging</span>' +
+      '<button type="button" class="staging-tools__btn" id="staging-fill">Fill with test data</button>' +
+      '<button type="button" class="staging-tools__btn" id="staging-reset">Clear</button>';
+    document.body.appendChild(bar);
+
+    $('staging-fill').addEventListener('click', function () {
+      if (state.submitted) return;
+      fillTestApplication();
+    });
+
+    /* Clearing wipes only this browser's copy. The server-side draft is left
+       alone deliberately — deleting real rows from a button on a web page is
+       not something worth risking a misclick on. */
+    $('staging-reset').addEventListener('click', function () {
+      try { localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_KEYS); } catch (err) {}
+      location.href = location.pathname;
+    });
   }
 
   function makePlaceholderPhoto() {
@@ -934,6 +978,9 @@
 
     // Warn about a closed or grace-period window before anyone starts typing.
     checkFeeWindow();
+
+    // Staging-only prefill controls. Never rendered on the live site.
+    maybeShowStagingTools();
 
     var params = new URLSearchParams(location.search);
 

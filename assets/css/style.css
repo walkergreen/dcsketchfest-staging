@@ -465,7 +465,8 @@ h5 {
 }
 
 @media (max-width: 767px) {
-  .badge-27 { right: -.75rem; top: -1.75rem; }
+  /* Float mostly above the title so it doesn't swallow the last letters. */
+  .badge-27 { width: 4rem; right: -.25rem; top: -2.75rem; }
 }
 
 .hero-art {

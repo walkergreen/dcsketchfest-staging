@@ -1,0 +1,1384 @@
+/* ==========================================================================
+   DC Sketchfest — 2027 rebrand (staging)
+   "Riso print shop": cobalt, fluorescent pink and sun yellow inks on warm
+   paper, heavy outlines, hard offset shadows, halftone dots, DC-flag stars.
+   Display type is Anton; body is Space Grotesk.
+
+   Class names are carried over from the 2026 site so the lineup pages and
+   main.js keep working untouched; legacy color variables (--red, --teal,
+   --cream, --purple, --dark) are aliased onto the new inks for the same
+   reason.
+   ========================================================================== */
+
+:root {
+  --ink: #211b3a;
+  --paper: #f6efe1;
+  --blue: #2b3fbf;
+  --pink: #ef4d8e;
+  --yellow: #ffc933;
+  --white: #fffdf8;
+
+  /* Legacy names still referenced by inline styles and generated pages. */
+  --red: var(--pink);
+  --cream: var(--paper);
+  --teal: var(--blue);
+  --purple: var(--blue);
+  --dark: var(--ink);
+
+  --font-display: "Anton", "Arial Black", sans-serif;
+  --font-body: "Space Grotesk", system-ui, -apple-system, sans-serif;
+
+  --border: 3px solid var(--ink);
+  --shadow-offset: 6px;
+  --radius-card: 20px;
+  --radius-pill: 14px;
+
+  --gutter: 2.5rem;
+  --container: 80rem;
+
+  /* Halftone dot patterns, tinted per background. */
+  --dots-light: radial-gradient(rgba(255, 253, 248, .16) 1.5px, transparent 1.5px);
+  --dots-dark: radial-gradient(rgba(33, 27, 58, .07) 1.5px, transparent 1.5px);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --gutter: 1.25rem;
+    --shadow-offset: 5px;
+  }
+}
+
+/* --------------------------------------------------------------- base --- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 8rem;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+a {
+  color: inherit;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  line-height: 1.02;
+  letter-spacing: .015em;
+  margin: 0;
+}
+
+.h-hero    { font-size: clamp(3.25rem, 13vw, 10rem); }
+.h-xl      { font-size: clamp(2.5rem, 9vw, 6.25rem); }
+.h-lg      { font-size: clamp(2.25rem, 8vw, 5rem); }
+.h-md      { font-size: clamp(1.75rem, 6vw, 3.75rem); }
+.h-sm      { font-size: clamp(1.375rem, 4vw, 2.25rem); }
+.h-xs      { font-size: clamp(1.125rem, 3vw, 1.5rem); letter-spacing: .03em; }
+
+.text-yellow { color: var(--yellow); }
+.text-teal   { color: var(--pink); }   /* legacy accent class → pink ink */
+.text-white  { color: var(--white); }
+.text-purple { color: var(--blue); }
+.text-center { text-align: center; }
+
+.body-copy {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: clamp(1.05rem, 1.7vw, 1.3rem);
+  line-height: 1.55;
+}
+
+/* ---------------------------------------------------------- structure --- */
+
+.section {
+  position: relative;
+  overflow: hidden;
+}
+
+.section--red    { background: var(--pink); }
+.section--cream  { background: var(--paper); background-image: var(--dots-dark); background-size: 26px 26px; }
+.section--teal   { background: var(--blue); background-image: var(--dots-light); background-size: 26px 26px; }
+.section--yellow { background: var(--yellow); }
+
+/* The mailing-list section trades cobalt for full ink — the site's finale. */
+#newsletter-section.section--teal {
+  background: var(--ink);
+  background-image: var(--dots-light);
+  background-size: 26px 26px;
+}
+
+.pad {
+  padding-left: var(--gutter);
+  padding-right: var(--gutter);
+}
+
+.pad-lg { padding-top: 8rem;    padding-bottom: 8rem; }
+.pad-md { padding-top: 5rem;    padding-bottom: 5rem; }
+.pad-sm { padding-top: 3rem;    padding-bottom: 3rem; }
+
+@media (max-width: 991px) {
+  .pad-lg { padding-top: 6rem; padding-bottom: 6rem; }
+  .pad-md { padding-top: 4rem; padding-bottom: 4rem; }
+  .pad-sm { padding-top: 2rem; padding-bottom: 2rem; }
+}
+
+@media (max-width: 767px) {
+  .pad-lg { padding-top: 4rem; padding-bottom: 4rem; }
+  .pad-md { padding-top: 3rem; padding-bottom: 3rem; }
+}
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin-inline: auto;
+}
+
+.container--md { max-width: 60rem; }
+
+.stack > * + * { margin-top: 1.5rem; }
+.stack-sm > * + * { margin-top: .75rem; }
+
+/* ------------------------------------------------------------ buttons --- */
+
+/* Chunky print-block buttons: ink outline, hard offset shadow in a second
+   ink color, and the block drops onto its shadow on hover. */
+.btn {
+  --btn-bg: var(--yellow);
+  --btn-fg: var(--ink);
+  --btn-shadow: var(--pink);
+  position: relative;
+  display: inline-block;
+  text-decoration: none;
+  isolation: isolate;
+
+  /* Reset UA button chrome so <button class="btn"> matches <a class="btn">. */
+  appearance: none;
+  -webkit-appearance: none;
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: var(--btn-shadow);
+  border: var(--border);
+  transform: translate(var(--shadow-offset), var(--shadow-offset));
+  z-index: -1;
+}
+
+.btn > span {
+  display: block;
+  background: var(--btn-bg);
+  color: var(--btn-fg);
+  border: var(--border);
+  border-radius: var(--radius-pill);
+  padding: .85rem 1.6rem;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.05rem, 1.6vw, 1.4rem);
+  letter-spacing: .05em;
+  line-height: 1;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: transform .15s ease;
+}
+
+.btn:hover > span,
+.btn:focus-visible > span {
+  transform: translate(var(--shadow-offset), var(--shadow-offset));
+}
+
+.btn:focus-visible {
+  outline: 3px solid var(--pink);
+  outline-offset: 4px;
+  border-radius: var(--radius-pill);
+}
+
+.btn--purple { --btn-bg: var(--pink); --btn-fg: var(--white); --btn-shadow: var(--yellow); }
+.btn--yellow { --btn-bg: var(--yellow); --btn-fg: var(--ink); --btn-shadow: var(--pink); }
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+@media (max-width: 560px) {
+  .btn > span {
+    white-space: normal;
+    padding: .7rem 1.15rem;
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .btn-row { gap: 1rem; }
+}
+
+/* ----------------------------------------------------------- wordmark --- */
+
+/* Text lockup replacing the old PNG logo: DC ★★★ SKETCHFEST, the three
+   stars straight off the DC flag. */
+.wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .45rem;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: .02em;
+  line-height: 1;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.wordmark-stars {
+  color: var(--pink);
+  font-size: .62em;
+  letter-spacing: .12em;
+  transform: translateY(-.12em);
+}
+
+.brand {
+  text-decoration: none;
+}
+
+.brand .wordmark { font-size: clamp(1.25rem, 2vw, 1.6rem); }
+
+/* ---------------------------------------------------------------- nav --- */
+
+.navbar {
+  position: fixed;
+  top: 1.25rem;
+  left: 0;
+  right: 0;
+  z-index: 99;
+  padding-inline: var(--gutter);
+}
+
+.nav-inner {
+  position: relative;
+  width: 100%;
+  max-width: 70rem;
+  margin-inline: auto;
+}
+
+.nav-inner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius-pill);
+  background: var(--pink);
+  border: var(--border);
+  transform: translate(var(--shadow-offset), var(--shadow-offset));
+}
+
+.nav-bar {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius-pill);
+  padding: .7rem 1rem .7rem 1.5rem;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 1.6rem;
+}
+
+.nav-link {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  letter-spacing: .05em;
+  line-height: 1;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  padding-bottom: .15rem;
+  border-bottom: 3px solid transparent;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.nav-link:hover,
+.nav-link[aria-current="page"] {
+  color: var(--pink);
+  border-bottom-color: var(--pink);
+}
+
+/* Keep the donate pill from towering over the links. */
+.navbar .btn > span {
+  padding: .6rem 1.2rem;
+  font-size: 1.1rem;
+}
+
+.nav-toggle {
+  display: none;
+  width: 3rem;
+  height: 3rem;
+  padding: 0;
+  border: var(--border);
+  border-radius: 12px;
+  background: var(--yellow);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 20px;
+  height: 3px;
+  background: var(--ink);
+  border-radius: 2px;
+  transition: transform .25s ease, opacity .25s ease;
+}
+
+.nav-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(8px) rotate(45deg); }
+.nav-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.nav-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-8px) rotate(-45deg); }
+
+.nav-donate-desktop { flex: none; }
+
+@media (max-width: 991px) {
+  .nav-toggle { display: flex; }
+  .nav-donate-desktop { display: none; }
+
+  .nav-links {
+    position: absolute;
+    top: calc(100% + 1rem);
+    left: 0;
+    right: 0;
+    flex-direction: column;
+    gap: 1.25rem;
+    background: var(--paper);
+    border: var(--border);
+    border-radius: var(--radius-card);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
+    display: none;
+  }
+
+  .nav-links.is-open { display: flex; }
+  .nav-bar { padding-right: .7rem; }
+}
+
+/* --------------------------------------------------------------- hero --- */
+
+.hero {
+  position: relative;
+  background-color: var(--blue);
+  background-image: var(--dots-light);
+  background-size: 26px 26px;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding-top: 9rem;
+  padding-bottom: 5rem;
+  width: 100%;
+}
+
+.hero h1 {
+  color: var(--paper);
+  text-shadow:
+    var(--shadow-offset) var(--shadow-offset) 0 var(--pink),
+    calc(var(--shadow-offset) * 2) calc(var(--shadow-offset) * 2) 0 var(--ink);
+  margin-bottom: 1.75rem;
+}
+
+.hero-meta {
+  color: var(--yellow);
+  margin-bottom: 2.75rem;
+}
+
+/* Rotated year sticker pinned beside the wordmark. */
+.hero-title-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.badge-27 {
+  position: absolute;
+  top: -1.25rem;
+  right: -2.5rem;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  width: clamp(4.5rem, 9vw, 6.5rem);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: var(--yellow);
+  border: var(--border);
+  box-shadow: 4px 4px 0 var(--ink);
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.6vw, 1.9rem);
+  color: var(--ink);
+  transform: rotate(12deg);
+}
+
+@media (max-width: 767px) {
+  .badge-27 { right: -.75rem; top: -1.75rem; }
+}
+
+.hero-art {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.hero-art img {
+  position: absolute;
+  width: auto;
+}
+
+.hero-art .art-tumbler {
+  top: 6%;
+  right: -2%;
+  height: 32vh;
+  transform: rotate(-8deg);
+}
+
+.hero-art .art-striped {
+  bottom: 4%;
+  right: 3%;
+  height: 48vh;
+}
+
+.hero-art .art-side {
+  bottom: 12%;
+  left: -3%;
+  height: 30vh;
+  transform: rotate(6deg);
+}
+
+@media (max-width: 991px) {
+  .hero-art .art-tumbler { height: 22vh; top: 9%; right: -8%; }
+  .hero-art .art-striped { height: 30vh; right: -5%; }
+  .hero-art .art-side    { height: 22vh; left: -10%; }
+}
+
+@media (max-width: 767px) {
+  .hero-art { opacity: .3; }
+  .hero-content { padding-top: 8rem; }
+}
+
+/* ------------------------------------------------------------- ticker --- */
+
+/* Marquee strip under the hero. The track holds two identical spans so the
+   -50% translate loops seamlessly. */
+.ticker {
+  background: var(--yellow);
+  border-top: var(--border);
+  border-bottom: var(--border);
+  overflow: hidden;
+  padding: .65rem 0;
+}
+
+.ticker-track {
+  display: flex;
+  width: max-content;
+  animation: ticker-scroll 28s linear infinite;
+}
+
+.ticker-track > span {
+  font-family: var(--font-display);
+  font-size: clamp(1.1rem, 2vw, 1.5rem);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink);
+  white-space: nowrap;
+  padding-right: 1.5rem;
+}
+
+@keyframes ticker-scroll {
+  to { transform: translateX(-50%); }
+}
+
+/* ------------------------------------------------------------ tickets --- */
+
+.tickets-heading {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+/* Between festivals the calendar's place is held by a big ticket stub —
+   white card, dashed inner rule, slight tilt. */
+.coming-soon {
+  position: relative;
+  text-align: center;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  padding: 4rem 2.5rem 3.5rem;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
+  transform: rotate(-1deg);
+}
+
+.coming-soon::before {
+  content: "";
+  position: absolute;
+  inset: .75rem;
+  border: 2px dashed var(--pink);
+  border-radius: calc(var(--radius-card) - 8px);
+  pointer-events: none;
+}
+
+.coming-soon .body-copy {
+  margin: 1.5rem auto 2rem;
+  max-width: 34rem;
+}
+
+@media (max-width: 767px) {
+  .coming-soon { padding: 2.5rem 1.25rem 2rem; }
+}
+
+/* Year switcher on the lineup pages. */
+.year-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .625rem;
+  margin-top: 1.5rem;
+}
+
+.year-link {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.2rem;
+  letter-spacing: .05em;
+  line-height: 1;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: var(--paper);
+  border: 3px solid var(--paper);
+  border-radius: 12px;
+  padding: .55rem 1.15rem;
+  transition: background-color .15s ease, color .15s ease;
+}
+
+.year-link:hover {
+  background: var(--paper);
+  color: var(--blue);
+}
+
+.year-link.is-current {
+  background: var(--yellow);
+  border-color: var(--ink);
+  color: var(--ink);
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+/* Marks a lineup page as a past festival. */
+.archive-note {
+  border: 3px dashed var(--paper);
+  border-radius: var(--radius-card);
+  padding: 1.25rem 1.5rem;
+  margin-top: 1.5rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: clamp(1rem, 1.6vw, 1.2rem);
+  line-height: 1.45;
+  color: var(--paper);
+}
+
+.archive-note a { color: var(--yellow); }
+
+/* The Crowdwork calendar injects its own markup; it scrolls inside this box
+   on phones rather than stretching the document. */
+.crowdwork-embed {
+  min-height: 320px;
+  margin-inline: auto;
+  max-width: var(--container);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crowdwork-embed:empty::after {
+  content: "Loading the show calendar…";
+  display: block;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  color: var(--ink);
+  opacity: .6;
+  padding: 4rem 1rem;
+}
+
+/* -------------------------------------------------------- lineup call --- */
+
+.lineup-call {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 3rem;
+  align-items: center;
+  position: relative;
+}
+
+@media (max-width: 767px) {
+  .lineup-call {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+}
+
+.shaped-frame-wrap {
+  position: relative;
+}
+
+/* Loose food art tucked behind the bottom-left corner of the frame. */
+.food-strawberry {
+  position: absolute;
+  left: -1.5rem;
+  bottom: -2.5rem;
+  width: 7rem;
+  z-index: 3;
+  pointer-events: none;
+}
+
+@media (max-width: 767px) {
+  .food-strawberry { width: 4.5rem; left: -.5rem; bottom: -1.5rem; }
+}
+
+/* Yellow halftone frame holding the Mumbie sash art. */
+.shaped-frame {
+  position: relative;
+  z-index: 2;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background-color: var(--yellow);
+  background-image: radial-gradient(rgba(33, 27, 58, .12) 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1.25rem;
+  min-height: 22rem;
+  transform: rotate(2deg);
+}
+
+.shaped-frame img {
+  width: 100%;
+  max-width: 12rem;
+  transform: rotate(-26deg);
+}
+
+.food-blueberries {
+  position: absolute;
+  right: -2rem;
+  bottom: -4rem;
+  width: 12rem;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.food-blob {
+  display: block;
+  width: min(100%, 22rem);
+  margin: -2rem auto 0;
+}
+
+@media (max-width: 767px) {
+  .food-blueberries { width: 7rem; right: -1rem; bottom: -2rem; }
+}
+
+/* ------------------------------------------------------------ sliders --- */
+
+.slider {
+  position: relative;
+  padding-bottom: 4.5rem;
+}
+
+.slider-track {
+  display: flex;
+  gap: 1.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  padding: .5rem .5rem calc(.5rem + var(--shadow-offset));
+}
+
+.slider-track::-webkit-scrollbar { display: none; }
+
+.slider-track > * {
+  flex: 0 0 calc(50% - .75rem);
+  scroll-snap-align: start;
+}
+
+@media (max-width: 767px) {
+  .slider-track > * { flex: 0 0 100%; }
+}
+
+.slide-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 450px;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background-color: var(--paper);
+  background-position: 50%;
+  background-size: cover;
+  padding: 2rem;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+}
+
+.slide-card--quote {
+  justify-content: space-between;
+  gap: 1.5rem;
+  background: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
+}
+
+.slide-card__quote {
+  font-family: var(--font-body);
+  font-weight: 500;
+  text-transform: none;
+  color: var(--blue);
+  font-size: clamp(1.2rem, 2vw, 1.7rem);
+  line-height: 1.35;
+}
+
+.slide-card__name {
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-transform: none;
+  font-size: clamp(1.1rem, 1.7vw, 1.4rem);
+  color: var(--white);
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .6);
+}
+
+.slide-card--quote .slide-card__name {
+  color: var(--ink);
+  text-shadow: none;
+}
+
+.slide-card__team {
+  font-family: var(--font-body);
+  font-size: .95rem;
+  color: var(--ink);
+  opacity: .75;
+}
+
+.slider-controls {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  display: flex;
+  gap: .75rem;
+}
+
+.slider-btn {
+  width: 3rem;
+  height: 3rem;
+  padding: .6rem;
+  border: var(--border);
+  border-radius: 12px;
+  background: var(--yellow);
+  color: var(--ink);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 3px 3px 0 var(--ink);
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.slider-btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.slider-btn:disabled {
+  opacity: .35;
+  cursor: default;
+  transform: none;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.slider-btn svg { width: 100%; height: 100%; }
+
+.slider-credit {
+  margin-top: 1rem;
+  font-family: var(--font-body);
+  color: var(--white);
+  font-size: .95rem;
+}
+
+/* ---------------------------------------------------------- press bit --- */
+
+.press-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 4rem;
+  align-items: center;
+}
+
+@media (max-width: 767px) {
+  .press-grid { grid-template-columns: 1fr; gap: 3rem; }
+}
+
+.press-copy .body-copy {
+  color: var(--ink);
+  margin-top: 1.5rem;
+}
+
+.press-photo-wrap {
+  position: relative;
+}
+
+/* A big yellow star peeks out from behind the photo — the old yellow blob
+   SVG belongs to the 2026 brand and is hidden below. */
+.press-photo-wrap::before {
+  content: "★";
+  position: absolute;
+  top: -4.5rem;
+  left: -3.5rem;
+  z-index: 0;
+  font-size: 9rem;
+  line-height: 1;
+  color: var(--yellow);
+  text-shadow: 4px 4px 0 var(--ink);
+  transform: rotate(-14deg);
+  pointer-events: none;
+}
+
+.press-photo {
+  position: relative;
+  z-index: 1;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--yellow);
+  transform: rotate(-2deg);
+}
+
+.press-photo img {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+}
+
+.press-shape { display: none; }
+
+@media (max-width: 767px) {
+  .press-photo-wrap::before { font-size: 5.5rem; top: -2.5rem; left: -1rem; }
+}
+
+/* -------------------------------------------------------------- venue --- */
+
+.venue-map {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  margin-top: 2.5rem;
+}
+
+.venue-map iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+
+/* ------------------------------------------------------------- mumbie --- */
+
+.mumbie-art {
+  position: relative;
+  margin: 3rem auto;
+  max-width: 40rem;
+}
+
+.mumbie-art__main {
+  width: 100%;
+  max-width: 25rem;
+  margin-inline: auto;
+  position: relative;
+  z-index: 1;
+}
+
+.mumbie-art__side {
+  position: absolute;
+  bottom: 0;
+  width: 9rem;
+}
+
+.mumbie-art__side--left  { left: 0; width: 6rem; }
+.mumbie-art__side--mid   { left: 22%; bottom: -1rem; width: 5rem; }
+.mumbie-art__side--right { right: 0; }
+
+@media (max-width: 767px) {
+  .mumbie-art__side { width: 5rem; }
+  .mumbie-art__side--left { width: 3.75rem; }
+  .mumbie-art__side--mid  { width: 3.25rem; left: 18%; }
+}
+
+/* ---------------------------------------------------------------- faq --- */
+
+.faq-layout {
+  display: grid;
+  grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr);
+  gap: 3rem;
+  align-items: start;
+}
+
+@media (max-width: 767px) {
+  .faq-layout { grid-template-columns: 1fr; gap: 2rem; }
+}
+
+.faq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.faq-item {
+  border: var(--border);
+  border-radius: 16px;
+  background: var(--paper);
+  overflow: hidden;
+  box-shadow: 4px 4px 0 var(--ink);
+}
+
+.faq-item summary {
+  position: relative;
+  display: block;
+  padding: 1rem 3.5rem 1rem 1.5rem;
+  text-align: left;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1.35rem;
+  letter-spacing: .03em;
+  line-height: 1.15;
+  text-transform: uppercase;
+  color: var(--ink);
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+
+.faq-item summary::after {
+  content: "";
+  position: absolute;
+  right: 1.25rem;
+  top: 50%;
+  width: 1.35rem;
+  height: 1.35rem;
+  margin-top: -.675rem;
+  background: var(--pink);
+  transition: transform .3s ease;
+  clip-path: polygon(43% 0, 57% 0, 57% 43%, 100% 43%, 100% 57%, 57% 57%, 57% 100%, 43% 100%, 43% 57%, 0 57%, 0 43%, 43% 43%);
+}
+
+.faq-item[open] summary::after { transform: rotate(45deg); }
+
+.faq-item .faq-answer {
+  padding: 0 1.5rem 1.25rem;
+  text-align: left;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+
+.faq-item .faq-answer a { color: var(--blue); }
+
+/* --------------------------------------------------------- newsletter --- */
+
+.form-embed {
+  max-width: 40rem;
+  margin-inline: auto;
+}
+
+.form-embed iframe {
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  display: block;
+}
+
+/* Shown until a Google Form URL is configured; see README. */
+.form-fallback {
+  border: 3px dashed var(--paper);
+  border-radius: var(--radius-card);
+  padding: 2rem;
+  text-align: center;
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.2rem;
+  line-height: 1.4;
+}
+
+.form-fallback a { color: var(--yellow); }
+
+/* ------------------------------------------------------ signup form --- */
+
+.signup {
+  max-width: 40rem;
+  margin: 2.5rem auto 0;
+}
+
+.signup-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .75rem;
+  margin-bottom: 1.5rem;
+}
+
+.signup-input {
+  flex: 1 1 14rem;
+  min-width: 0;
+  min-height: 3.75rem;
+  border: var(--border);
+  border-radius: var(--radius-pill);
+  background: var(--paper);
+  color: var(--ink);
+  text-align: center;
+  padding: .5rem 1.25rem;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.15rem;
+}
+
+.signup-input::placeholder {
+  color: var(--ink);
+  opacity: .55;
+}
+
+.signup-input:focus-visible {
+  outline: 3px solid var(--pink);
+  outline-offset: 2px;
+}
+
+.signup-input[aria-invalid="true"] {
+  border-color: var(--pink);
+  background: #ffe9f2;
+}
+
+/* Honeypot: off-screen rather than display:none, which some bots skip. */
+.signup-trap {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.signup-submit {
+  display: block;
+  margin-inline: auto;
+}
+
+.signup-submit[disabled] {
+  opacity: .6;
+  pointer-events: none;
+}
+
+.signup-status {
+  min-height: 1.5rem;
+  margin: 1.5rem 0 0;
+  text-align: center;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.05rem;
+  line-height: 1.3;
+  color: var(--paper);
+}
+
+.signup-status.is-error { color: var(--yellow); }
+
+.signup-note {
+  margin-top: 1rem;
+  text-align: center;
+  color: var(--paper);
+}
+
+.signup-note a,
+.signup-status a { color: var(--yellow); }
+
+.link {
+  color: var(--yellow);
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------- footer --- */
+
+.footer {
+  background: var(--ink);
+  border-top: 3px solid var(--pink);
+  color: var(--paper);
+}
+
+.footer-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.footer-logo {
+  text-decoration: none;
+}
+
+.footer-logo .wordmark {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  color: var(--paper);
+}
+
+.footer-logo .wordmark-stars { color: var(--yellow); }
+
+.footer-social {
+  text-align: right;
+}
+
+.footer-social .join-us {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  margin-bottom: .5rem;
+}
+
+.social-links {
+  display: flex;
+  gap: 1.25rem;
+  justify-content: flex-end;
+}
+
+.social-links a {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  text-decoration: none;
+}
+
+.social-links a:hover { text-decoration: underline; color: var(--pink); }
+
+@media (max-width: 767px) {
+  .footer-wrapper { flex-direction: column; text-align: center; }
+  .footer-social { text-align: center; }
+  .social-links { justify-content: center; }
+}
+
+/* ------------------------------------------------------- lineup page --- */
+
+.lineup-hero {
+  background-color: var(--blue);
+  background-image: var(--dots-light);
+  background-size: 26px 26px;
+  padding-top: 11rem;
+}
+
+.performer-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr));
+  gap: 2rem;
+}
+
+.performer-card {
+  display: flex;
+  flex-direction: column;
+  background: var(--white);
+  border: var(--border);
+  border-radius: var(--radius-card);
+  overflow: hidden;
+  box-shadow: 5px 5px 0 var(--ink);
+}
+
+/* Fill the frame rather than pad to it — photos arrive in every ratio.
+   Biased slightly above centre so faces survive the crop. */
+.performer-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  height: auto;
+  object-fit: cover;
+  object-position: center 30%;
+  background: var(--paper);
+  border-bottom: var(--border);
+}
+
+.performer-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: .75rem;
+  padding: 1rem 1.25rem 1.5rem;
+}
+
+.performer-card__name {
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+
+.performer-card__city {
+  font-family: var(--font-body);
+  font-size: .85rem;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--pink);
+  font-weight: 700;
+}
+
+.performer-card__blurb {
+  font-family: var(--font-body);
+  font-size: .9rem;
+  line-height: 1.55;
+  margin: 0;
+}
+
+.lineup-section {
+  background-color: var(--paper);
+  background-image: var(--dots-dark);
+  background-size: 26px 26px;
+}
+
+/* ---------------------------------------------------------------- 404 --- */
+
+.error-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  background-color: var(--blue);
+  background-image: var(--dots-light);
+  background-size: 26px 26px;
+  padding: 2rem;
+}
+
+/* -------------------------------------------------------- staging tag --- */
+
+/* Fixed marker so nobody mistakes the preview for the live site. */
+.staging-tag {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 98;
+  background: var(--ink);
+  color: var(--paper);
+  border: 2px solid var(--pink);
+  border-radius: 10px;
+  padding: .35rem .65rem;
+  font-family: var(--font-body);
+  font-size: .75rem;
+  font-weight: 500;
+  letter-spacing: .02em;
+  opacity: .92;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------- scroll reveal --- */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity .6s ease, transform .6s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  .reveal,
+  .reveal.is-visible {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .slider-track { scroll-behavior: auto; }
+
+  .ticker-track { animation: none; }
+}
+
+/* --------------------------------------------------------------- misc --- */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 200;
+  background: var(--yellow);
+  color: var(--ink);
+  border: var(--border);
+  padding: 1rem 1.5rem;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+}
+
+.skip-link:focus {
+  left: 1rem;
+  top: 1rem;
+}

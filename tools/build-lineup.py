@@ -72,7 +72,7 @@ PAGE = """<!DOCTYPE html>
   <div class="nav-inner">
     <div class="nav-bar">
       <a href="/" class="brand" aria-label="DC Sketchfest home">
-        <span class="wordmark">DC <span class="wordmark-stars" aria-hidden="true">★★★</span> Sketchfest</span>
+        <span class="wordmark">DC <svg class="wordmark-flag" viewBox="0 0 60 40" aria-hidden="true" focusable="false"><polygon points="11.0,2.5 13.0,8.2 19.1,8.4 14.2,12.1 16.0,17.9 11.0,14.4 6.0,17.9 7.8,12.1 2.9,8.4 9.0,8.2"/><polygon points="30.0,2.5 32.0,8.2 38.1,8.4 33.2,12.1 35.0,17.9 30.0,14.4 25.0,17.9 26.8,12.1 21.9,8.4 28.0,8.2"/><polygon points="49.0,2.5 51.0,8.2 57.1,8.4 52.2,12.1 54.0,17.9 49.0,14.4 44.0,17.9 45.8,12.1 40.9,8.4 47.0,8.2"/><rect x="0" y="23" width="60" height="6"/><rect x="0" y="33" width="60" height="6"/></svg> Sketchfest</span>
       </a>
 
       <nav id="nav-links" class="nav-links" aria-label="Main">
@@ -133,7 +133,7 @@ PAGE = """<!DOCTYPE html>
   <div class="pad pad-sm">
     <div class="container footer-wrapper">
       <a class="footer-logo" href="/" title="Homepage">
-        <span class="wordmark">DC <span class="wordmark-stars" aria-hidden="true">★★★</span> Sketchfest</span>
+        <span class="wordmark">DC <svg class="wordmark-flag" viewBox="0 0 60 40" aria-hidden="true" focusable="false"><polygon points="11.0,2.5 13.0,8.2 19.1,8.4 14.2,12.1 16.0,17.9 11.0,14.4 6.0,17.9 7.8,12.1 2.9,8.4 9.0,8.2"/><polygon points="30.0,2.5 32.0,8.2 38.1,8.4 33.2,12.1 35.0,17.9 30.0,14.4 25.0,17.9 26.8,12.1 21.9,8.4 28.0,8.2"/><polygon points="49.0,2.5 51.0,8.2 57.1,8.4 52.2,12.1 54.0,17.9 49.0,14.4 44.0,17.9 45.8,12.1 40.9,8.4 47.0,8.2"/><rect x="0" y="23" width="60" height="6"/><rect x="0" y="33" width="60" height="6"/></svg> Sketchfest</span>
       </a>
       <div class="footer-social">
         <div class="join-us">Follow us on social media!</div>

@@ -23,22 +23,25 @@
       ? 'http://localhost:8789/api/apply'
       : 'https://dcsketchfest-app.greenroom.workers.dev/api/apply',
 
-    year: '2026',
+    year: '2027',
     edition: '3rd',
-    dates_line: 'March 25–28 at The DC Arts Center',
+    dates_line: 'March 31–April 3 at Sitar Arts Center',
     deadline_regular: 'Regular Application ($25) – Friday, October 31, 11:59 PM ET.',
     deadline_late: 'Late Application ($40) – Sunday, November 23, 11:59 PM ET.',
-    notification: 'All applicants will be contacted mid-January 2026.',
+    notification: 'All applicants will be contacted mid-January 2027.',
 
     /* Only used for the "you already applied but still owe the fee" case; the
        submit flow uses whatever PAYMENT_URL the Worker is configured with. */
     payment_url: 'https://crowdwork.com/e/dc-sketchfest-2026-application-fee',
 
+    /* Stored verbatim as the applicant's availability and read straight by the
+       schedule builder, so the weekday must match the date. 2027 runs Wed–Sat,
+       March 31 to April 3. */
     dates: [
-      'Wednesday, March 25, 2026',
-      'Thursday, March 26, 2026',
-      'Friday, March 27, 2026',
-      'Saturday, March 28, 2026'
+      'Wednesday, March 31, 2027',
+      'Thursday, April 1, 2027',
+      'Friday, April 2, 2027',
+      'Saturday, April 3, 2027'
     ]
   };
 

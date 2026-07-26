@@ -9,6 +9,45 @@ DC-flag star wordmark) on top of the production content. All pages are
 [production repo](https://github.com/walkergreen/dcsketchfest) — and strip the
 noindex tags, the `.staging-tag` div, and the robots.txt disallow.
 
+## `/apply/` — the performer application form
+
+Staging also carries something production doesn't: the replacement for the
+Airtable application form, at `/apply/`.
+
+| File | What |
+|---|---|
+| `apply/index.html` | The form. Hand-maintained, like `index.html`. |
+| `assets/css/apply.css` | Form chrome; nothing else on the site loads it. |
+| `assets/js/apply.js` | Drafts, resume links, photo upload, validation. |
+
+It is **deliberately not in the production repo yet** and is not linked from the
+nav anywhere — applications aren't open, and the copy still describes the 2026
+festival. It's here so it can be tried on a real host without being findable.
+
+The page is only the front end. Drafts, photos, submitted applications and the
+review dashboard live in a Cloudflare Worker in
+`Projects/dcsketchfest-judges-app` — the same app that runs judging, so a
+submitted application becomes a team on the judges' slate immediately. That
+repo's README is the reference for the backend.
+
+Two things to know before editing:
+
+1. **`CONFIG` at the top of `assets/js/apply.js`** owns the festival specifics —
+   year, show dates, deadlines, and `api` (the Worker's URL). `api` is still a
+   placeholder: the account has no `workers.dev` subdomain registered yet, so
+   nothing is deployed and the form can only be exercised against
+   `wrangler dev`.
+2. **Field `name=""` attributes are a contract** with `APPLICATION_FIELDS` in
+   the Worker's `src/index.js`. Rename one without the other and the answer is
+   silently dropped.
+
+**To move it to production**, copy those three paths into the
+[production repo](https://github.com/walkergreen/dcsketchfest), then update the
+`canonical` and `og:url` tags at the top of the page, drop the `noindex` meta,
+restore the `Photos` nav link (staging has no `/photos/` page, production does),
+and set `application_form_url` in the judge app's Settings to the live URL —
+every resume link is built from that setting.
+
 Original production README follows.
 
 ---

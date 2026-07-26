@@ -1,5 +1,5 @@
 /* ==========================================================================
-   DC Sketchfest — 2027 rebrand (staging)
+   DC Sketchfest — 2027 rebrand
    "Riso print shop": cobalt, fluorescent pink and sun yellow inks on warm
    paper, heavy outlines, hard offset shadows, halftone dots, DC-flag stars.
    Display type is Anton; body is Space Grotesk.
@@ -256,7 +256,7 @@ h5 {
    stars straight off the DC flag. */
 .wordmark {
   display: inline-flex;
-  align-items: baseline;
+  align-items: center;
   gap: .45rem;
   font-family: var(--font-display);
   text-transform: uppercase;
@@ -266,6 +266,18 @@ h5 {
   white-space: nowrap;
 }
 
+/* The DC flag itself — three stars over two bars — drawn at the wordmark's
+   cap height and inheriting its color. */
+.wordmark-flag {
+  width: 1.5em;
+  height: 1em;
+  flex: none;
+  align-self: center;
+  fill: var(--pink);
+  overflow: visible;
+}
+
+/* Retained so any cached page still rendering the old ★★★ span looks right. */
 .wordmark-stars {
   color: var(--pink);
   font-size: .62em;
@@ -434,9 +446,16 @@ h5 {
   margin-bottom: 1.75rem;
 }
 
+/* Yellow on cobalt is fine, but yellow over the orange characters is not —
+   the ink outline keeps this line readable wherever the art lands. */
 .hero-meta {
   color: var(--yellow);
   margin-bottom: 2.75rem;
+  text-shadow:
+    3px 3px 0 var(--ink),
+    -2px -2px 0 var(--ink),
+    2px -2px 0 var(--ink),
+    -2px 2px 0 var(--ink);
 }
 
 /* Rotated year sticker pinned beside the wordmark. */
@@ -476,35 +495,48 @@ h5 {
   pointer-events: none;
 }
 
+/* The hero cast sits still — only the little Mumbies float. */
 .hero-art img {
   position: absolute;
   width: auto;
+  transform: rotate(var(--tilt, 0deg));
 }
 
 .hero-art .art-tumbler {
+  --tilt: -8deg;
   top: 6%;
   right: -2%;
   height: 32vh;
-  transform: rotate(-8deg);
 }
 
+/* Tucked toward the bezel and low, so the centred headline column stays
+   clear of it — this one used to cut across "…this fall". */
 .hero-art .art-striped {
-  bottom: 4%;
-  right: 3%;
-  height: 48vh;
+  --tilt: 0deg;
+  bottom: -1%;
+  right: -5%;
+  height: 44vh;
 }
 
 .hero-art .art-side {
-  bottom: 12%;
-  left: -3%;
-  height: 30vh;
-  transform: rotate(6deg);
+  --tilt: 6deg;
+  bottom: 8%;
+  left: -5%;
+  height: 28vh;
+}
+
+/* Between tablet and desktop the headline is at its widest relative to the
+   viewport, so the side art has to move further out still. */
+@media (max-width: 1300px) {
+  .hero-art .art-tumbler { right: -6%; height: 28vh; }
+  .hero-art .art-striped { right: -9%; height: 38vh; }
+  .hero-art .art-side    { left: -8%; height: 24vh; }
 }
 
 @media (max-width: 991px) {
-  .hero-art .art-tumbler { height: 22vh; top: 9%; right: -8%; }
-  .hero-art .art-striped { height: 30vh; right: -5%; }
-  .hero-art .art-side    { height: 22vh; left: -10%; }
+  .hero-art .art-tumbler { height: 22vh; top: 9%; right: -10%; }
+  .hero-art .art-striped { height: 30vh; right: -10%; }
+  .hero-art .art-side    { height: 22vh; left: -12%; }
 }
 
 @media (max-width: 767px) {
@@ -574,9 +606,11 @@ h5 {
 }
 
 .coming-soon .body-copy {
-  margin: 1.5rem auto 2rem;
+  margin: 1.5rem auto 0;
   max-width: 34rem;
 }
+
+.coming-soon .btn-row { margin-top: 2rem; }
 
 @media (max-width: 767px) {
   .coming-soon { padding: 2.5rem 1.25rem 2rem; }
@@ -722,10 +756,16 @@ h5 {
   pointer-events: none;
 }
 
+/* Sits between two sections purely as a flourish — kept small and pulled
+   tight so it doesn't push the next section below the fold. */
 .food-blob {
   display: block;
-  width: min(100%, 22rem);
-  margin: -2rem auto 0;
+  width: min(55%, 13rem);
+  margin: -5rem auto -2rem;
+}
+
+@media (max-width: 767px) {
+  .food-blob { width: min(45%, 8rem); margin: -2rem auto -1.5rem; }
 }
 
 @media (max-width: 767px) {
@@ -760,10 +800,14 @@ h5 {
   .slider-track > * { flex: 0 0 100%; }
 }
 
+/* margin:0 is load-bearing — a <figure> carries a UA margin of 1em 40px, and
+   that 80px of horizontal margin per slide broke the two-up flex math and
+   pushed the second slide past the right edge of both sliders. */
 .slide-card {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
+  margin: 0;
   min-height: 450px;
   border: var(--border);
   border-radius: var(--radius-card);
@@ -781,7 +825,9 @@ h5 {
   box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
 }
 
+/* Same story for <blockquote>. */
 .slide-card__quote {
+  margin: 0;
   font-family: var(--font-body);
   font-weight: 500;
   text-transform: none;
@@ -918,6 +964,27 @@ h5 {
 
 /* -------------------------------------------------------------- venue --- */
 
+/* Stands in for the address and map while the 2027 venue is unsigned. */
+.venue-tba {
+  max-width: 42rem;
+  margin: 2.5rem auto 0;
+  padding: 3rem 2rem 2.5rem;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  transform: rotate(1deg);
+}
+
+.venue-tba .body-copy {
+  margin: 1.25rem auto 2rem;
+  max-width: 30rem;
+}
+
+@media (max-width: 767px) {
+  .venue-tba { padding: 2rem 1.25rem; }
+}
+
 .venue-map {
   border: var(--border);
   border-radius: var(--radius-card);
@@ -936,10 +1003,12 @@ h5 {
 
 /* ------------------------------------------------------------- mumbie --- */
 
+/* Wider than the mascot so the little ones have clear margin to float in
+   rather than stacking up along the bottom edge. */
 .mumbie-art {
   position: relative;
   margin: 3rem auto;
-  max-width: 40rem;
+  max-width: 52rem;
 }
 
 .mumbie-art__main {
@@ -950,20 +1019,64 @@ h5 {
   z-index: 1;
 }
 
+/* Three little Mumbies orbiting the mascot — one high left, one low left,
+   one out to the right — each bobbing on its own clock so they never move
+   in lockstep. --tilt is the resting angle the float animation swings around,
+   and is what remains if the animation never runs. */
 .mumbie-art__side {
   position: absolute;
-  bottom: 0;
+  width: 9.5rem;
+  transform: rotate(var(--tilt, 0deg));
+  animation: character-float var(--float-dur, 6s) ease-in-out var(--float-delay, 0s) infinite;
+}
+
+.mumbie-art__side--left {
+  --tilt: -10deg;
+  --float-dur: 6.5s;
+  top: 4%;
+  left: 0;
+  width: 10rem;
+}
+
+.mumbie-art__side--mid {
+  --tilt: 9deg;
+  --float-dur: 5.5s;
+  --float-delay: -2.2s;
+  bottom: 6%;
+  left: 4%;
   width: 9rem;
 }
 
-.mumbie-art__side--left  { left: 0; width: 6rem; }
-.mumbie-art__side--mid   { left: 22%; bottom: -1rem; width: 5rem; }
-.mumbie-art__side--right { right: 0; }
+.mumbie-art__side--right {
+  --tilt: -7deg;
+  --float-dur: 7.5s;
+  --float-delay: -3.8s;
+  top: 30%;
+  right: 0;
+  width: 10.5rem;
+}
+
+/* --tilt is the resting angle the bob swings around, --lift how far it rises
+   at the top of the arc. */
+@keyframes character-float {
+  0%,
+  100% { transform: translateY(0) rotate(var(--tilt, 0deg)); }
+  50%  { transform: translateY(calc(-1 * var(--lift, 16px)))
+                    rotate(calc(var(--tilt, 0deg) + 3deg)); }
+}
+
+/* On a phone there is no side margin to orbit in, so they tuck against the
+   mascot's edges instead — smaller, and clear of its face. */
+@media (max-width: 991px) {
+  .mumbie-art__side--left  { width: 6.5rem; top: 0; left: -3%; }
+  .mumbie-art__side--mid   { width: 6rem; bottom: 2%; left: -2%; }
+  .mumbie-art__side--right { width: 7rem; top: 26%; right: -3%; }
+}
 
 @media (max-width: 767px) {
-  .mumbie-art__side { width: 5rem; }
-  .mumbie-art__side--left { width: 3.75rem; }
-  .mumbie-art__side--mid  { width: 3.25rem; left: 18%; }
+  .mumbie-art__side--left  { width: 5rem; }
+  .mumbie-art__side--mid   { width: 4.5rem; }
+  .mumbie-art__side--right { width: 5.5rem; }
 }
 
 /* ---------------------------------------------------------------- faq --- */
@@ -1177,6 +1290,12 @@ h5 {
   text-decoration: none;
 }
 
+/* The rebrand dropped the footer logo image, but a browser holding a cached
+   copy of the old markup would render it at full natural size. Keep it sized. */
+.footer-logo img {
+  width: min(14rem, 45vw);
+}
+
 .footer-logo .wordmark {
   font-size: clamp(1.5rem, 3vw, 2.25rem);
   color: var(--paper);
@@ -1212,6 +1331,28 @@ h5 {
 }
 
 .social-links a:hover { text-decoration: underline; color: var(--pink); }
+
+.footer-credit {
+  width: 100%;
+  max-width: var(--container);
+  margin: 2.25rem auto 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(246, 239, 225, .22);
+  text-align: center;
+  font-family: var(--font-body);
+  font-size: .85rem;
+  letter-spacing: .02em;
+  color: var(--paper);
+  opacity: .72;
+}
+
+.footer-credit a {
+  color: var(--yellow);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.footer-credit a:hover { color: var(--pink); }
 
 @media (max-width: 767px) {
   .footer-wrapper { flex-direction: column; text-align: center; }
@@ -1290,6 +1431,167 @@ h5 {
   background-size: 26px 26px;
 }
 
+/* -------------------------------------------------------- photo album --- */
+
+.album-year + .album-year { margin-top: 4.5rem; }
+
+.album-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .5rem 1.25rem;
+  margin-bottom: 1.75rem;
+  padding-bottom: 1rem;
+  border-bottom: var(--border);
+}
+
+.album-meta {
+  margin: 0;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1rem;
+  color: var(--ink);
+  opacity: .75;
+}
+
+.photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+  gap: 1.25rem;
+}
+
+/* Each tile is a button so the lightbox is reachable by keyboard. */
+.photo-tile {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: 4px 4px 0 var(--ink);
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+
+.photo-tile:hover,
+.photo-tile:focus-visible {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+.photo-tile:focus-visible {
+  outline: 3px solid var(--pink);
+  outline-offset: 3px;
+}
+
+.photo-tile img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-tile__name {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 1.75rem .875rem .625rem;
+  text-align: left;
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .9rem;
+  color: var(--white);
+  background: linear-gradient(transparent, rgba(33, 27, 58, .85));
+}
+
+/* ---------------------------------------------------------- lightbox --- */
+
+.lightbox[hidden] { display: none; }
+
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: rgba(33, 27, 58, .94);
+}
+
+.lightbox__figure {
+  margin: 0;
+  max-width: min(100%, 68rem);
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: .875rem;
+}
+
+.lightbox__img {
+  max-width: 100%;
+  max-height: 78vh;
+  width: auto;
+  margin-inline: auto;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--ink);
+}
+
+.lightbox__caption {
+  text-align: center;
+  font-family: var(--font-display);
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  font-size: 1.15rem;
+  color: var(--paper);
+}
+
+.lightbox__close,
+.lightbox__nav {
+  flex: none;
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: var(--border);
+  border-radius: 12px;
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--ink);
+}
+
+.lightbox__close {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  background: var(--pink);
+  color: var(--white);
+}
+
+.lightbox__close:hover,
+.lightbox__nav:hover {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 var(--ink);
+}
+
+@media (max-width: 767px) {
+  .lightbox { padding: 1rem; gap: .5rem; }
+  .lightbox__close,
+  .lightbox__nav { width: 2.5rem; height: 2.5rem; font-size: 1.15rem; }
+  .lightbox__img { max-height: 68vh; }
+}
+
 /* ---------------------------------------------------------------- 404 --- */
 
 .error-page {
@@ -1301,27 +1603,6 @@ h5 {
   background-image: var(--dots-light);
   background-size: 26px 26px;
   padding: 2rem;
-}
-
-/* -------------------------------------------------------- staging tag --- */
-
-/* Fixed marker so nobody mistakes the preview for the live site. */
-.staging-tag {
-  position: fixed;
-  bottom: 1rem;
-  left: 1rem;
-  z-index: 98;
-  background: var(--ink);
-  color: var(--paper);
-  border: 2px solid var(--pink);
-  border-radius: 10px;
-  padding: .35rem .65rem;
-  font-family: var(--font-body);
-  font-size: .75rem;
-  font-weight: 500;
-  letter-spacing: .02em;
-  opacity: .92;
-  pointer-events: none;
 }
 
 /* ------------------------------------------------------- scroll reveal --- */
@@ -1349,7 +1630,8 @@ h5 {
 
   .slider-track { scroll-behavior: auto; }
 
-  .ticker-track { animation: none; }
+  .ticker-track,
+  .mumbie-art__side { animation: none; }
 }
 
 /* --------------------------------------------------------------- misc --- */

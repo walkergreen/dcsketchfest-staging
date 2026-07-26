@@ -545,6 +545,89 @@
       'follow us on social media and we will announce next year’s dates there.');
   }
 
+  /* ------------------------------------------------------ admin bypass --- */
+
+  /* `?fill=1` fills every question with obvious placeholder answers and
+     generates the required group photo, so an admin can reach the payment
+     step in one click instead of typing out a whole application.
+
+     Deliberately NOT a validation bypass: it satisfies the real requirements
+     through the real code paths, so what you see afterwards is exactly what an
+     applicant gets. Nothing server-side is loosened, which means this can't
+     become a hole that lets a genuine applicant skip required questions.
+
+     Everything it types is prefixed TEST so any application that reaches the
+     admin panel this way is obvious at a glance. */
+  var TEST_ANSWERS = {
+    team_name: 'TEST — delete me',
+    bio: 'TEST application generated with ?fill=1. Not a real team. Safe to delete.',
+    team_size: '4',
+    home: 'Washington, DC',
+    instagram: '@dcsketchfest',
+    contact_first: 'Test',
+    contact_last: 'Applicant',
+    contact_email: 'admin@dcsketchfest.com',
+    contact_phone: '202-555-0100',
+    tape: 'https://vimeo.com/76979871',
+    show_description: 'TEST submission used to check the application flow end to end.',
+    stage_reqs: 'TEST — two chairs.',
+    tech_reqs: 'TEST — one mic.',
+    accessibility: '',
+    anything_else: 'TEST application. Delete before judging.',
+    agree: true
+  };
+
+  function fillTestApplication() {
+    var data = {};
+    FIELDS.forEach(function (f) {
+      if (f.type === 'list') {
+        // Tick the first option of each checkbox group — enough to be valid
+        // without pretending the team is available every night.
+        var first = form.querySelector('input[name="' + f.name + '"]');
+        data[f.name] = first ? [first.value] : [];
+      } else if (f.type === 'bool') {
+        data[f.name] = true;
+      } else {
+        data[f.name] = TEST_ANSWERS[f.name] !== undefined ? TEST_ANSWERS[f.name] : 'TEST';
+      }
+    });
+    fill(data);
+    touch();
+
+    banner('apply-banner--warn',
+      '<strong>Test mode.</strong> This form has been filled with placeholder answers ' +
+      'so you can reach the payment step. Anything submitted will appear in the admin ' +
+      'panel as “TEST — delete me”.');
+
+    // The photo is genuinely required, so make a real one and push it through
+    // the real upload endpoint rather than teaching the server to skip it.
+    makePlaceholderPhoto()
+      .then(function (file) { handleFile(file); })
+      .catch(function () { setStatus('Could not generate a test photo', 'error'); });
+
+    var submit = $('submit');
+    if (submit) submit.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function makePlaceholderPhoto() {
+    return new Promise(function (resolve, reject) {
+      var canvas = document.createElement('canvas');
+      canvas.width = 1200; canvas.height = 800;
+      var ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#2b3fbf';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#ffc933';
+      ctx.font = 'bold 96px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TEST PHOTO', canvas.width / 2, canvas.height / 2);
+      canvas.toBlob(function (blob) {
+        if (!blob) return reject(new Error('no_blob'));
+        resolve(new File([blob], 'test-photo.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', 0.8);
+    });
+  }
+
   /* --------------------------------------------------- checkout preview --- */
 
   /* `?preview=<code>` renders the real Stripe checkout with no application
@@ -853,6 +936,12 @@
     checkFeeWindow();
 
     var params = new URLSearchParams(location.search);
+
+    // Admin shortcut: fill the whole form so the payment step is one click away.
+    if (params.get('fill')) {
+      fillTestApplication();
+      return;
+    }
     var keys = params.get('id') && params.get('t')
       ? { id: params.get('id'), token: params.get('t') }
       : readLocal(LS_KEYS);

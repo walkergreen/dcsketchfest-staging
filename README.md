@@ -1,3 +1,18 @@
+# staging.dcsketchfest.com — 2027 rebrand preview
+
+**This is the staging copy, not the live site.** It carries the 2027 rebrand
+(cobalt / fluorescent pink / sun yellow riso look, Anton + Space Grotesk,
+DC-flag star wordmark) on top of the production content. All pages are
+`noindex` and `robots.txt` disallows crawling. To ship the rebrand, port
+`assets/css/style.css`, the wordmark/favicon/ticker markup, and
+`tools/build-lineup.py` template changes into the
+[production repo](https://github.com/walkergreen/dcsketchfest) — and strip the
+noindex tags, the `.staging-tag` div, and the robots.txt disallow.
+
+Original production README follows.
+
+---
+
 # dcsketchfest.com
 
 The DC Sketchfest website — a plain static site (HTML + CSS + a little vanilla

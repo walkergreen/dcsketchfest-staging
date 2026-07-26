@@ -447,3 +447,73 @@ button[disabled] { opacity: .55; cursor: progress; }
 .sheet p { font-size: .95rem; }
 .sheet .form-actions { justify-content: flex-end; margin-top: 1.5rem; }
 .sheet .btn > span { font-size: 1rem; padding: .55rem 1rem; }
+
+/* ---------------------------------------------------------- payment --- */
+/* The Payment Element renders inside Stripe's own iframe, so this styles only
+   the frame around it — the card fields themselves are themed via the
+   `appearance` object in apply.js. */
+
+#pay-wrap {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+#payment-element { margin-bottom: 1.25rem; }
+
+.pay-error {
+  background: var(--pink);
+  color: var(--white);
+  border: var(--border);
+  border-radius: 12px;
+  padding: .6rem .8rem;
+  font-size: .9rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+}
+.pay-error[hidden] { display: none; }
+
+.pay-ok {
+  background: var(--yellow);
+  border: var(--border);
+  border-radius: 12px;
+  padding: .8rem 1rem;
+  margin: 0;
+}
+
+#pay-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+/* ----------------------------------------------------------- banners --- */
+/* Deadline and preview notices. Loud on purpose — a grace-period applicant
+   must not be able to skim past the fact that their application is
+   provisional and their money may come back. */
+
+.apply-banner {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  padding: 1rem 1.25rem;
+  margin: 0 0 1.5rem;
+  font-size: .95rem;
+  line-height: 1.5;
+}
+
+.apply-banner--warn {
+  background: var(--yellow);
+  color: var(--ink);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+}
+
+.apply-banner--closed {
+  background: var(--pink);
+  color: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+}
+
+.apply-banner code {
+  background: rgba(33, 27, 58, .12);
+  padding: .1rem .35rem;
+  border-radius: 6px;
+}

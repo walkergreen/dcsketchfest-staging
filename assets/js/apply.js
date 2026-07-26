@@ -24,10 +24,10 @@
       : 'https://dcsketchfest-app.greenroom.workers.dev/api/apply',
 
     year: '2027',
-    edition: '3rd',
+    edition: '4th',
     dates_line: 'March 31–April 3 at Sitar Arts Center',
     deadline_regular: 'Regular Application ($25) – Friday, October 31, 11:59 PM ET.',
-    deadline_late: 'Late Application ($40) – Sunday, November 23, 11:59 PM ET.',
+    deadline_late: 'Late Application ($40) – Thursday, December 31, 11:59 PM ET.',
     notification: 'All applicants will be contacted mid-January 2027.',
 
     /* Only used for the "you already applied but still owe the fee" case; the
@@ -458,22 +458,285 @@
       });
   });
 
+  function money(cents) {
+    return '$' + (cents / 100).toFixed(2).replace(/\.00$/, '');
+  }
+
   function showSubmitted(body, data) {
     form.hidden = true;
     if (saveBar) saveBar.hidden = true;
     done.hidden = false;
-    done.innerHTML =
-      '<h2 class="h-md">Application received</h2>' +
-      '<p><strong>You’re not done yet.</strong> Your application is incomplete until you pay the application fee.</p>' +
-      '<p><a class="btn btn--purple" href="' + esc(body.payUrl) + '"><span>Pay the application fee</span></a></p>' +
-      '<p>All sales are final and non-refundable. Payment does not guarantee entry. ' + esc(CONFIG.notification) + '</p>' +
+
+    var reference =
       '<p>Your reference is <span class="ref">' + esc(state.id) + '</span>. ' +
       (body.emailed
         ? 'A copy of your answers is on its way to ' + esc(data.contact_email) + '.'
         : 'Please save this reference — quote it if you email us about your application.') +
       '</p>';
+
+    var inForm = body.payments_mode === 'stripe' && body.publishable_key;
+
+    done.innerHTML =
+      '<h2 class="h-md">Application received</h2>' +
+      '<p><strong>You’re not done yet.</strong> Your application is incomplete until you pay the application fee' +
+      (body.amount_cents ? ' of <strong>' + money(body.amount_cents) + '</strong>' : '') + '.</p>' +
+      // Repeated here deliberately: this is the last screen before money
+      // changes hands, so the provisional terms must be in front of them.
+      (body.grace && body.grace_warning
+        ? '<p class="apply-banner apply-banner--warn"><strong>Past the deadline.</strong> ' +
+          esc(body.grace_warning) + '</p>'
+        : '') +
+      (inForm
+        ? '<div id="pay-wrap">' +
+            '<div id="payment-element"></div>' +
+            '<p class="pay-error" id="pay-error" hidden></p>' +
+            '<button type="button" class="btn btn--purple" id="pay-btn"><span>Pay ' +
+              (body.amount_cents ? money(body.amount_cents) : 'the application fee') + '</span></button>' +
+          '</div>'
+        : '<p><a class="btn btn--purple" href="' + esc(body.payUrl) + '"><span>Pay the application fee</span></a></p>') +
+      '<p>All sales are final and non-refundable. Payment does not guarantee entry. ' + esc(CONFIG.notification) + '</p>' +
+      reference;
+
     done.scrollIntoView({ behavior: 'smooth', block: 'start' });
     if (window.gtag) gtag('event', 'application_submitted');
+
+    if (inForm) mountPayment(body);
+  }
+
+  /* ------------------------------------------------------------- pay --- */
+
+  /* Stripe.js is only fetched once someone actually reaches the payment step,
+     so the form itself carries no third-party script for the 20 minutes people
+     spend filling it in. Card fields live in Stripe's own iframes — card
+     numbers never touch this page or the festival's servers. */
+  /* ------------------------------------------------- deadline warning --- */
+
+  /* Ask the Worker what the fee is right now. Someone arriving in the grace
+     window needs to know their application is provisional BEFORE they spend
+     twenty minutes on it — telling them only on the receipt would be a nasty
+     surprise attached to a charge. */
+  function checkFeeWindow() {
+    fetch(api('/fee'))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.ok) return;
+        if (!d.open) return showClosed();
+        if (d.grace && d.warning) showGraceWarning(d.warning);
+      })
+      .catch(function () { /* never block the form on this */ });
+  }
+
+  function banner(cls, html) {
+    var el = document.createElement('div');
+    el.className = 'apply-banner ' + cls;
+    el.innerHTML = html;
+    var anchor = document.querySelector('.apply-body .container') || form.parentNode;
+    anchor.insertBefore(el, anchor.firstChild);
+    return el;
+  }
+
+  function showGraceWarning(text) {
+    banner('apply-banner--warn', '<strong>Past the deadline.</strong> ' + esc(text));
+  }
+
+  function showClosed() {
+    banner('apply-banner--closed',
+      '<strong>Applications are closed.</strong> Thanks for your interest — ' +
+      'follow us on social media and we will announce next year’s dates there.');
+  }
+
+  /* --------------------------------------------------- checkout preview --- */
+
+  /* `?preview=<code>` renders the real Stripe checkout with no application
+     behind it, so an admin can see what applicants will see. The code is set
+     in the judge app's Settings; the Worker rejects anything else. */
+  function maybePreviewCheckout() {
+    var code = new URLSearchParams(location.search).get('preview');
+    if (!code) return false;
+
+    form.hidden = true;
+    if (saveBar) saveBar.hidden = true;
+    done.hidden = false;
+    done.innerHTML =
+      '<h2 class="h-md">Checkout preview</h2>' +
+      '<p>This is the payment step exactly as an applicant sees it. ' +
+      'No application has been created and nothing here is saved.</p>' +
+      '<div id="pay-wrap"><div id="payment-element"></div>' +
+      '<p class="pay-error" id="pay-error" hidden></p>' +
+      '<button type="button" class="btn btn--purple" id="pay-btn"><span>Pay</span></button></div>';
+
+    loadStripeJs()
+      .then(function () {
+        return fetch(api('/preview-intent'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ code: code })
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); });
+      })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.body.error || 'preview_failed');
+        var b = res.body;
+
+        if (b.live) {
+          banner('apply-banner--warn',
+            '<strong>These are LIVE Stripe keys.</strong> A card entered here will really be charged. ' +
+            'Switch to test keys (<code>pk_test_…</code>) before trying a payment.');
+        }
+
+        var payBtn = $('pay-btn');
+        payBtn.querySelector('span').textContent = 'Pay ' + money(b.amount_cents) +
+          (b.tier ? ' (' + b.tier + ')' : '');
+
+        var stripe = window.Stripe(b.publishable_key);
+        var elements = stripe.elements({
+          clientSecret: b.client_secret,
+          appearance: {
+            theme: 'flat',
+            variables: {
+              colorPrimary: '#2b3fbf', colorText: '#211b3a', colorBackground: '#fffdf8',
+              fontFamily: '"Space Grotesk", system-ui, sans-serif', borderRadius: '12px'
+            }
+          }
+        });
+        elements.create('payment', { layout: 'tabs' }).mount('#payment-element');
+
+        payBtn.addEventListener('click', function () {
+          payBtn.disabled = true;
+          payBtn.querySelector('span').textContent = 'Paying…';
+          stripe.confirmPayment({
+            elements: elements, redirect: 'if_required', confirmParams: { return_url: location.href }
+          }).then(function (result) {
+            payBtn.disabled = false;
+            var box = $('pay-error');
+            if (result.error) {
+              payBtn.querySelector('span').textContent = 'Try again';
+              if (box) { box.hidden = false; box.textContent = result.error.message; }
+            } else {
+              $('pay-wrap').innerHTML =
+                '<p class="pay-ok"><strong>Payment succeeded.</strong> ' +
+                'This was a preview — no application was created.</p>';
+            }
+          });
+        });
+      })
+      .catch(function (err) {
+        $('pay-wrap').innerHTML = '<p class="pay-error">Preview unavailable: ' +
+          esc(String(err.message)) + '</p>';
+      });
+
+    return true;
+  }
+
+  function loadStripeJs() {
+    if (window.Stripe) return Promise.resolve();
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement('script');
+      s.src = 'https://js.stripe.com/v3/';
+      s.onload = resolve;
+      s.onerror = function () { reject(new Error('stripe_js')); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function mountPayment(body) {
+    var errorBox = $('pay-error');
+    var payBtn = $('pay-btn');
+
+    function fail(message) {
+      if (!errorBox) return;
+      errorBox.hidden = false;
+      errorBox.textContent = message;
+    }
+
+    loadStripeJs()
+      .then(function () {
+        return fetch(api('/pay-intent'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: state.id, token: state.token })
+        }).then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); });
+      })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.body.error || 'pay_intent_failed');
+        if (res.body.paid) return showPaid();
+
+        var stripe = window.Stripe(body.publishable_key);
+        var elements = stripe.elements({
+          clientSecret: res.body.client_secret,
+          appearance: {
+            theme: 'flat',
+            variables: {
+              colorPrimary: '#2b3fbf',
+              colorText: '#211b3a',
+              colorBackground: '#fffdf8',
+              fontFamily: '"Space Grotesk", system-ui, sans-serif',
+              borderRadius: '12px'
+            }
+          }
+        });
+        /* Payment Element decides for itself which wallets to offer, so Apple
+           Pay appears on Safari/iOS and Google Pay on Android with no branching
+           here — but only over HTTPS on a domain registered with Stripe. */
+        elements.create('payment', { layout: 'tabs' }).mount('#payment-element');
+
+        payBtn.addEventListener('click', function () {
+          payBtn.disabled = true;
+          payBtn.querySelector('span').textContent = 'Paying…';
+          if (errorBox) errorBox.hidden = true;
+
+          stripe.confirmPayment({
+            elements: elements,
+            redirect: 'if_required',
+            confirmParams: { return_url: location.href }
+          }).then(function (result) {
+            if (result.error) {
+              payBtn.disabled = false;
+              payBtn.querySelector('span').textContent = 'Try again';
+              fail(result.error.message || 'That payment did not go through.');
+              return;
+            }
+            /* Don't take the browser's word for it — the webhook is what marks
+               the application paid, so read the server's view back. */
+            confirmPaidWithServer();
+          });
+        });
+      })
+      .catch(function () {
+        var wrap = $('pay-wrap');
+        if (wrap) {
+          wrap.innerHTML = '<p>We couldn’t load the payment form. Your application is saved — ' +
+            'email <a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> and we’ll send you a payment link.</p>';
+        }
+      });
+  }
+
+  function confirmPaidWithServer(attempt) {
+    attempt = attempt || 0;
+    fetch(api('/payment-status?id=' + encodeURIComponent(state.id) +
+              '&token=' + encodeURIComponent(state.token)))
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.paid) return showPaid();
+        // The webhook usually lands within a second or two; give it a few
+        // tries before telling someone their money is in limbo.
+        if (attempt < 6) return setTimeout(function () { confirmPaidWithServer(attempt + 1); }, 1200);
+        var wrap = $('pay-wrap');
+        if (wrap) {
+          wrap.innerHTML = '<p><strong>Your payment went through.</strong> It is taking a moment to ' +
+            'register on our side — you do not need to pay again. Quote reference ' +
+            '<span class="ref">' + esc(state.id) + '</span> if you email us.</p>';
+        }
+      })
+      .catch(function () {});
+  }
+
+  function showPaid() {
+    var wrap = $('pay-wrap');
+    if (wrap) {
+      wrap.innerHTML = '<p class="pay-ok"><strong>Paid — your application is complete.</strong> ' +
+        'Nothing else is needed from you.</p>';
+    }
+    if (window.gtag) gtag('event', 'application_paid');
   }
 
   /* --------------------------------------------------- save for later --- */
@@ -580,8 +843,14 @@
   /* ---------------------------------------------------------- startup --- */
 
   function boot() {
+    // Admin checkout preview short-circuits everything else.
+    if (maybePreviewCheckout()) return;
+
     saveBar.hidden = false;
     setStatus('Not saved yet', '');
+
+    // Warn about a closed or grace-period window before anyone starts typing.
+    checkFeeWindow();
 
     var params = new URLSearchParams(location.search);
     var keys = params.get('id') && params.get('t')

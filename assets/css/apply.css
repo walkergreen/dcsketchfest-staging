@@ -1,0 +1,449 @@
+/* ==========================================================================
+   DC Sketchfest — application form
+   Loaded only by /apply/. Reuses the riso ink palette, borders and offset
+   shadows from style.css; everything here is form chrome that nothing else on
+   the site needs.
+   ========================================================================== */
+
+/* The navbar is fixed, and this page has no full-height hero to sit behind it,
+   so the title band buys back the space itself. */
+.apply-hero .pad-md { padding-top: 9.5rem; }
+
+@media (max-width: 767px) {
+  .apply-hero .pad-md { padding-top: 8rem; }
+}
+
+/* Two ancestors would otherwise kill the sticky save bar: `.section` clips its
+   decorative art with overflow:hidden, and `body` uses overflow-x:hidden to
+   stop that art causing sideways scroll. Both make scroll containers, and
+   sticky then has nothing to stick to. This section has no art to clip, and
+   overflow-x:clip does the same job as hidden without the scroll container —
+   scoped to this page so the rest of the site is untouched. */
+.apply-body { overflow: visible; }
+body.apply-page { overflow-x: clip; }
+
+.apply-intro { text-align: center; }
+.apply-intro > * + * { margin-top: .75rem; }
+.apply-intro h1 { margin-bottom: .5rem; }
+
+/* ------------------------------------------------------- intro panels --- */
+
+.apply-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3.5rem;
+}
+
+.apply-note {
+  background: var(--white);
+  border: var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  padding: 1.5rem 1.4rem;
+}
+
+.apply-note h2 { color: var(--pink); margin-bottom: .6rem; }
+.apply-note p { margin: 0 0 .6rem; font-size: .95rem; }
+.apply-note p:last-child { margin-bottom: 0; }
+.apply-note a { color: var(--blue); font-weight: 600; }
+
+/* ----------------------------------------------------------- save bar --- */
+
+/* Sticks to the top of the viewport under the navbar so the autosave state and
+   the escape hatch are always one glance away on a form this long. */
+.save-bar {
+  position: sticky;
+  top: 6.75rem;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: var(--yellow);
+  border: var(--border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--ink);
+  padding: .75rem 1rem .75rem 1.25rem;
+  margin-bottom: 2.5rem;
+}
+
+.save-status {
+  font-weight: 600;
+  font-size: .95rem;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.save-status::before {
+  content: "";
+  width: .7rem;
+  height: .7rem;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: .3;
+  flex: none;
+}
+
+.save-status[data-state="saving"]::before { opacity: .55; animation: pulse 1s ease-in-out infinite; }
+.save-status[data-state="saved"]::before  { background: #1a7f4b; opacity: 1; }
+.save-status[data-state="error"]::before  { background: #c02626; opacity: 1; }
+
+@keyframes pulse { 50% { opacity: .15; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .save-status[data-state="saving"]::before { animation: none; }
+}
+
+.save-bar .btn > span { font-size: 1rem; padding: .6rem 1.1rem; }
+.save-bar .btn { --shadow-offset: 4px; }
+
+@media (max-width: 560px) {
+  /* The navbar is barely shorter on mobile, so the 6.75rem offset stands. */
+  .save-bar { padding: .7rem .8rem; }
+  .save-status { font-size: .85rem; }
+}
+
+/* -------------------------------------------------------------- fields --- */
+
+.apply-form { margin: 0; }
+
+.field-group {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
+  padding: 2rem 1.75rem;
+  margin: 0 0 3rem;
+}
+
+/* The .h-* classes only carry size — the display face comes from the h1–h5
+   selector in style.css, which a <legend> never matches. */
+.field-group > legend {
+  font-family: var(--font-display);
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  line-height: 1.1;
+  background: var(--ink);
+  color: var(--paper);
+  border: var(--border);
+  border-radius: var(--radius-pill);
+  padding: .35rem 1rem;
+  margin-left: -.5rem;
+}
+
+.group-help { margin-top: 0; }
+
+.field { margin-bottom: 1.75rem; }
+.field:last-child { margin-bottom: 0; }
+
+/* `.check` labels keep their own flex layout — only question labels get the
+   heading treatment. */
+.field > label:not(.check),
+.checkgroup > legend {
+  display: block;
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 1.05rem;
+  margin-bottom: .35rem;
+  padding: 0;
+}
+
+.req { color: var(--pink); }
+
+.help {
+  margin: 0 0 .55rem;
+  font-size: .9rem;
+  line-height: 1.45;
+  color: #5d5670;
+}
+
+.help a { color: var(--blue); }
+
+.field input[type="text"],
+.field input[type="email"],
+.field input[type="tel"],
+.field input[type="url"],
+.field input[type="number"],
+.field textarea {
+  width: 100%;
+  font: inherit;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 10px;
+  padding: .7rem .85rem;
+  transition: box-shadow .12s ease;
+}
+
+.field textarea { resize: vertical; min-height: 5rem; }
+
+.field input:focus-visible,
+.field textarea:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--yellow), 3px 3px 0 var(--blue);
+}
+
+.field input[aria-invalid="true"],
+.field textarea[aria-invalid="true"],
+.checkgroup[aria-invalid="true"] {
+  border-color: #c02626;
+  background: #fdf1f1;
+}
+
+.field-error {
+  margin: .4rem 0 0;
+  font-size: .875rem;
+  font-weight: 600;
+  color: #c02626;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .field-row { grid-template-columns: 1fr; gap: 0; }
+  .field-group { padding: 1.5rem 1.1rem; }
+}
+
+/* --------------------------------------------------------- checkboxes --- */
+
+.checkgroup {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1.75rem;
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: .6rem;
+}
+
+.check {
+  display: flex;
+  align-items: flex-start;
+  gap: .65rem;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 10px;
+  padding: .65rem .8rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.check:hover { background: var(--yellow); }
+
+.check input {
+  flex: none;
+  width: 1.2rem;
+  height: 1.2rem;
+  margin: .1rem 0 0;
+  accent-color: var(--blue);
+  cursor: pointer;
+}
+
+.check:has(input:checked) { background: var(--yellow); }
+
+.check:has(input:focus-visible) {
+  outline: 3px solid var(--pink);
+  outline-offset: 3px;
+}
+
+.check--agree {
+  align-items: flex-start;
+  font-size: .95rem;
+  line-height: 1.5;
+  background: var(--yellow);
+}
+
+/* ----------------------------------------------------------- dropzone --- */
+
+.dropzone {
+  position: relative;
+  border: 3px dashed var(--ink);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  padding: 1.75rem 1.25rem;
+  text-align: center;
+  transition: background .12s ease;
+}
+
+.dropzone input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.dropzone.is-over,
+.dropzone:hover { background: var(--yellow); }
+
+.dropzone:has(input:focus-visible) {
+  outline: 3px solid var(--pink);
+  outline-offset: 3px;
+}
+
+.dropzone-text { margin: 0; font-weight: 600; }
+.dropzone-text .link { color: var(--blue); text-decoration: underline; }
+
+/* style.css sets `img { display: block }`, which outranks the UA rule for the
+   hidden attribute — without this the empty preview shows as a stray dot. */
+.photo-preview[hidden] { display: none; }
+
+.photo-preview {
+  max-width: 12rem;
+  max-height: 12rem;
+  margin: 0 auto .85rem;
+  border: var(--border);
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+/* --------------------------------------------------------- guidelines --- */
+
+.guidelines {
+  margin-top: .85rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: .6rem .9rem;
+}
+
+.guidelines summary {
+  cursor: pointer;
+  font-weight: 700;
+  font-size: .95rem;
+  color: var(--blue);
+}
+
+.guidelines[open] summary { margin-bottom: .6rem; }
+.guidelines ul { margin: 0 0 .75rem; padding-left: 1.2rem; }
+.guidelines li { margin-bottom: .5rem; font-size: .92rem; }
+.guidelines p { margin: 0; font-size: .92rem; }
+
+/* ------------------------------------------------------------ actions --- */
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+  margin-top: 1rem;
+}
+
+.text-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--blue);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.text-btn:hover { color: var(--pink); }
+
+.errors {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: #fdf1f1;
+  border-color: #c02626;
+  color: #8a1a1a;
+  padding: 1.1rem 1.3rem;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.errors ul { margin: .5rem 0 0; padding-left: 1.2rem; font-weight: 500; }
+.errors a { color: #8a1a1a; }
+
+button[disabled] { opacity: .55; cursor: progress; }
+
+/* Honeypot — off-screen rather than display:none, which some bots skip. */
+.hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+/* ------------------------------------------- saved / submitted panels --- */
+
+.done {
+  background: var(--white);
+  border: var(--border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.done h2 { color: var(--pink); margin-bottom: 1rem; }
+.done p { margin: 0 auto 1rem; max-width: 38rem; }
+.done .btn { margin: .75rem 0 1.5rem; }
+.done .ref { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; }
+
+.resume-link {
+  display: flex;
+  gap: .5rem;
+  max-width: 34rem;
+  margin: 0 auto 1rem;
+}
+
+.resume-link input {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: .875rem;
+  background: var(--paper);
+  border: var(--border);
+  border-radius: 10px;
+  padding: .6rem .7rem;
+}
+
+.resume-link button {
+  font: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+  background: var(--blue);
+  color: var(--white);
+  border: var(--border);
+  border-radius: 10px;
+  padding: .6rem 1rem;
+  cursor: pointer;
+}
+
+@media (max-width: 560px) {
+  .resume-link { flex-direction: column; }
+}
+
+/* ------------------------------------------------------------- dialog --- */
+
+.sheet {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  color: var(--ink);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
+  padding: 2rem;
+  max-width: 34rem;
+  width: calc(100% - 2rem);
+}
+
+.sheet::backdrop { background: rgba(33, 27, 58, .55); }
+.sheet h2 { color: var(--pink); margin-bottom: .75rem; }
+.sheet p { font-size: .95rem; }
+.sheet .form-actions { justify-content: flex-end; margin-top: 1.5rem; }
+.sheet .btn > span { font-size: 1rem; padding: .55rem 1rem; }

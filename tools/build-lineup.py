@@ -78,6 +78,7 @@ PAGE = """<!DOCTYPE html>
       <nav id="nav-links" class="nav-links" aria-label="Main">
         <a class="nav-link" href="/#about-section">2027</a>
         <a class="nav-link" href="/performers-{newest}/" aria-current="page">Past Lineups</a>
+        <a class="nav-link" href="/apply/">Apply</a>
         <a class="nav-link" href="/#faq-section">FAQ</a>
         <a class="nav-link" href="mailto:admin@dcsketchfest.com?subject=Question">Contact</a>
       </nav>

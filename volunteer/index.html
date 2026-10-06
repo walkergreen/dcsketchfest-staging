@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Volunteer Sign Up - DC Sketchfest</title>
+<meta name="description" content="Sign up to volunteer with DC Sketchfest before the 2027 festival.">
+<link rel="canonical" href="https://staging.dcsketchfest.com/volunteer/">
+<link rel="icon" href="/assets/img/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/img/brand/favicon-32.png" sizes="32x32">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/style.css">
+<link rel="stylesheet" href="/assets/css/apply.css">
+</head>
+<body>
+<header class="navbar">
+  <div class="nav-inner">
+    <div class="nav-bar">
+      <a href="/" class="brand" aria-label="DC Sketchfest home">
+        <span class="wordmark">DC <svg class="wordmark-flag" viewBox="0 0 60 40" aria-hidden="true" focusable="false"><polygon points="11.0,2.5 13.0,8.2 19.1,8.4 14.2,12.1 16.0,17.9 11.0,14.4 6.0,17.9 7.8,12.1 2.9,8.4 9.0,8.2"/><polygon points="30.0,2.5 32.0,8.2 38.1,8.4 33.2,12.1 35.0,17.9 30.0,14.4 25.0,17.9 26.8,12.1 21.9,8.4 28.0,8.2"/><polygon points="49.0,2.5 51.0,8.2 57.1,8.4 52.2,12.1 54.0,17.9 49.0,14.4 44.0,17.9 45.8,12.1 40.9,8.4 47.0,8.2"/><rect x="0" y="23" width="60" height="6"/><rect x="0" y="33" width="60" height="6"/></svg> Sketchfest</span>
+      </a>
+
+      <nav id="nav-links" class="nav-links" aria-label="Main">
+        <!-- Matches staging's own nav: no Photos page exists in this repo. -->
+        <a class="nav-link" href="/#about-section">2027</a>
+        <a class="nav-link" href="/performers-2026/">Past Lineups</a>
+        <a class="nav-link" href="/apply/">Apply</a>
+        <a class="nav-link" href="/volunteer/" aria-current="page">Volunteer</a>
+        <a class="nav-link" href="/#faq-section">FAQ</a>
+        <a class="nav-link" href="mailto:admin@dcsketchfest.com?subject=Question">Contact</a>
+      </nav>
+
+      <a class="btn nav-donate-desktop" href="https://givebutter.com/dcsketchfest2027"><span>Donate</span></a>
+
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="nav-links" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+<main>
+<section class="section section--teal apply-hero">
+  <div class="pad pad-md">
+    <div class="container container--md apply-intro">
+      <h1 class="h-lg text-yellow">DC Sketchfest 2027<br>Pre-Festival Volunteer Sign Up</h1>
+      <p class="body-copy text-white">This is the sign-up sheet for pre-festival activity. There will be another form in January for during-festival volunteering.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section section--cream apply-body">
+  <div class="pad pad-md">
+    <div class="container container--md">
+
+      <!-- Posts straight to the Google Form behind
+           "DCSF 2027 Pre-Festival Volunteer Sign Up", so a submission here is
+           an ordinary form response: Google writes the row, the timestamp and
+           the column mapping into the linked responses sheet itself. Field
+           names are the form's own entry IDs and must not be renamed.
+           The POST targets the hidden iframe below because Google's endpoint
+           sends no CORS headers; the iframe's load event is the only signal
+           the browser is allowed to see. -->
+      <form id="volunteer-form" class="apply-form" method="POST"
+            action="https://docs.google.com/forms/d/e/1FAIpQLSf3IQ2f6wrhQe0cdu_0TbGnJo70_1DNCT-iABmTUIySwugE0w/formResponse"
+            target="gform-sink" novalidate>
+
+        <!-- Bots fill hidden fields; humans never see this one. -->
+        <p class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></p>
+
+        <div class="field">
+          <label for="name">What is your name? <span class="req">*</span></label>
+          <input type="text" id="name" name="entry.748899624" autocomplete="name" required>
+        </div>
+
+        <div class="field">
+          <label for="email">What is your email address? <span class="req">*</span></label>
+          <input type="email" id="email" name="entry.22364742" autocomplete="email" required>
+        </div>
+
+        <div class="field">
+          <label for="phone">What is your phone number? <span class="req">*</span></label>
+          <input type="tel" id="phone" name="entry.150452939" autocomplete="tel" required>
+        </div>
+
+        <fieldset class="field checkgroup">
+          <legend>What areas are you interested in volunteering for?</legend>
+          <p class="help">Use Other to express any unique skills you could add to the festival.</p>
+          <div class="checks">
+              <label class="check"><input type="checkbox" name="entry.2141830555" value="Fundraising & Sponsorship - Securing paid and in-kind sponsorships, organizing fundraising events" id="area0"><span>Fundraising &amp; Sponsorship - Securing paid and in-kind sponsorships, organizing fundraising events</span></label>
+              <label class="check"><input type="checkbox" name="entry.2141830555" value="Marketing & Promotion - Promoting the festival in media and social media" id="area1"><span>Marketing &amp; Promotion - Promoting the festival in media and social media</span></label>
+              <label class="check"><input type="checkbox" name="entry.2141830555" value="Art & Design - Creating graphics and contributing to the visual brand of the festival" id="area2"><span>Art &amp; Design - Creating graphics and contributing to the visual brand of the festival</span></label>
+              <label class="check"><input type="checkbox" name="entry.2141830555" value="Social Media - Planning and creating social media content to support the festival" id="area3"><span>Social Media - Planning and creating social media content to support the festival</span></label>
+              <label class="check"><input type="checkbox" name="entry.2141830555" value="Website - Posting on and managing the web page (technical web skills preferred)" id="area4"><span>Website - Posting on and managing the web page (technical web skills preferred)</span></label>
+              <label class="check"><input type="checkbox" name="entry.2141830555" value="General - Happy to help to with anything that may come up" id="area5"><span>General - Happy to help to with anything that may come up</span></label>
+              <label class="check"><input type="checkbox" value="__other_option__" id="area-other"><span>Other</span></label>
+          </div>
+          <div class="field" id="area-other-wrap" hidden style="margin-top:1rem">
+            <label for="area-other-text">Other &mdash; tell us more</label>
+            <input type="text" id="area-other-text" name="entry.2141830555.other_option_response">
+          </div>
+        </fieldset>
+
+        <fieldset class="field checkgroup">
+          <legend>What days are best for you for meeting (assume evenings)?</legend>
+          <div class="checks">
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Monday" id="day0"><span>Monday</span></label>
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Tuesday" id="day1"><span>Tuesday</span></label>
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Wednesday" id="day2"><span>Wednesday</span></label>
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Thursday" id="day3"><span>Thursday</span></label>
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Friday" id="day4"><span>Friday</span></label>
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Saturday" id="day5"><span>Saturday</span></label>
+              <label class="check"><input type="checkbox" name="entry.1623177207" value="Sunday" id="day6"><span>Sunday</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <label for="feedback">If you have been a volunteer before, is there any feedback you&rsquo;d like to share about the volunteer process?</label>
+          <textarea id="feedback" name="entry.12081110" rows="4"></textarea>
+        </div>
+
+        <div class="field">
+          <label for="anything">Anything else we should know?</label>
+          <textarea id="anything" name="entry.1994531496" rows="4"></textarea>
+        </div>
+
+        <div class="errors" id="errors" role="alert" hidden></div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn btn--purple" id="submit"><span>Sign me up</span></button>
+          <button type="button" class="text-btn" id="clear">Clear form</button>
+        </div>
+      </form>
+
+      <div id="done" class="done" hidden></div>
+
+      <!-- Submission target. Keeps the page put instead of handing the
+           visitor Google's own confirmation screen. -->
+      <iframe name="gform-sink" id="gform-sink" title="Form submission target"
+              style="position:absolute;left:-9999px;width:1px;height:1px;border:0"
+              aria-hidden="true" tabindex="-1"></iframe>
+
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="pad pad-sm">
+    <div class="container footer-wrapper">
+      <a class="footer-logo" href="/" title="Homepage">
+        <span class="wordmark">DC <svg class="wordmark-flag" viewBox="0 0 60 40" aria-hidden="true" focusable="false"><polygon points="11.0,2.5 13.0,8.2 19.1,8.4 14.2,12.1 16.0,17.9 11.0,14.4 6.0,17.9 7.8,12.1 2.9,8.4 9.0,8.2"/><polygon points="30.0,2.5 32.0,8.2 38.1,8.4 33.2,12.1 35.0,17.9 30.0,14.4 25.0,17.9 26.8,12.1 21.9,8.4 28.0,8.2"/><polygon points="49.0,2.5 51.0,8.2 57.1,8.4 52.2,12.1 54.0,17.9 49.0,14.4 44.0,17.9 45.8,12.1 40.9,8.4 47.0,8.2"/><rect x="0" y="23" width="60" height="6"/><rect x="0" y="33" width="60" height="6"/></svg> Sketchfest</span>
+      </a>
+      <div class="footer-social">
+        <div class="join-us">Follow us on social media!</div>
+        <div class="social-links">
+          <a href="https://facebook.com/dcsketchfest" target="_blank" rel="noopener">fb</a>
+          <a href="https://instagram.com/dcsketchfest" target="_blank" rel="noopener">insta</a>
+        </div>
+      </div>
+    </div>
+    <p class="footer-credit">Designed by <a href="https://instagram.com/guywalks" target="_blank" rel="noopener">Walker Green</a></p>
+  </div>
+</footer>
+
+<script src="/assets/js/main.js" defer></script>
+<script src="/assets/js/volunteer.js" defer></script>
+</body>
+</html>

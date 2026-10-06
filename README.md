@@ -52,6 +52,41 @@ Original production README follows.
 
 ---
 
+## `/volunteer/` — the volunteer sign-up form
+
+The festival's own front end for the Google Form **"DCSF 2027 Pre-Festival
+Volunteer Sign Up"**. It does not write to the responses sheet. It POSTs to
+that form's `formResponse` endpoint using the form's entry ids, so Google
+records an ordinary response and handles the timestamp, the columns and the
+sheet itself. The responses sheet belongs to a collaborator, not to this repo's
+owner, which is why nothing here holds credentials for it.
+
+**The page cannot tell you when this breaks.** Google's endpoint sends no CORS
+headers, so the browser cannot read the outcome and the visitor is thanked
+whether or not anything was stored. Measured behaviour:
+
+| What changed in the Google Form | HTTP | Stored? | Effect |
+|---|---|---|---|
+| nothing | 200 | yes | — |
+| question renamed or reordered (entry id goes stale) | 200 | **yes** | that answer is silently dropped; the row arrives with a blank column |
+| checkbox option reworded | 400 | **no** | the whole sign-up is lost |
+| required question added | 400 | **no** | every sign-up is lost until the page is updated |
+
+So run this after anyone edits the form, and ideally on a schedule:
+
+```bash
+python3 tools/check-volunteer-form.py
+```
+
+It compares the live form against what the page actually posts and exits
+non-zero on any mismatch, including reworded options and newly added questions.
+
+`tools/volunteer-receipt.gs` is an Apps Script for the responses spreadsheet
+that emails the volunteer a receipt and the organisers a copy. The organiser
+copy fires only when Google really recorded a row, so it is per-signup proof
+the path worked — but silence is ambiguous, which is why the checker above is
+the actual safeguard.
+
 # dcsketchfest.com
 
 The DC Sketchfest website — a plain static site (HTML + CSS + a little vanilla

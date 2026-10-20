@@ -1692,7 +1692,7 @@ h5 {
   font-size: .9rem;
   letter-spacing: .18em;
   text-transform: uppercase;
-  color: var(--yellow);
+  color: var(--white);
   margin: 0 0 1rem;
 }
 .error-punchline {
@@ -1700,7 +1700,7 @@ h5 {
   font-weight: 500;
   font-size: clamp(1.05rem, 2vw, 1.35rem);
   line-height: 1.5;
-  color: var(--paper);
+  color: var(--white);
   margin: 1.25rem auto 0;
   max-width: 30rem;
 }

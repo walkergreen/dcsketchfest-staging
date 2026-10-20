@@ -332,6 +332,28 @@
       <!-- Sits outside the form so it is still on the page when the form is
            swapped out for the confirmation, and still there if the submit
            itself is what failed. -->
+      <!-- For someone who has NO link at all. "Save & finish later" needs an
+           application already open on this device; this does not, which is the
+           whole point: the person who needs it is on a different phone or
+           laptop from the one they started on.
+
+           The Worker answers an identical 200 whether or not the address has an
+           application, so that this cannot be used to discover who applied --
+           which means this panel must never say "found" or "not found". The
+           hedged wording below is load-bearing; do not "improve" it into a
+           confirmation. -->
+      <div class="recover-box">
+        <p class="recover-intro">Already started an application?
+          <button type="button" class="text-btn" id="recover-toggle">Click here to resume</button>
+        </p>
+        <div class="recover-form" id="recover-form" hidden>
+          <label class="visually-hidden" for="recover-email">Your email address</label>
+          <input type="email" id="recover-email" placeholder="the email you applied with" autocomplete="email">
+          <button type="button" class="btn btn--yellow" id="recover-send"><span>Email it to me</span></button>
+          <p class="recover-status" id="recover-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+
       <p class="apply-help-out">Having issues submitting this form? Email
         <a href="mailto:admin@dcsketchfest.com?subject=Trouble%20submitting%20my%20DC%20Sketchfest%20application">admin@dcsketchfest.com</a>.</p>
 

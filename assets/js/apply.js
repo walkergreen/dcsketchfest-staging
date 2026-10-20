@@ -1520,11 +1520,92 @@
   }
 
 
+  /* ---------------------------------------------------------- recovery --- */
+
+  /* For an applicant with no link at all. POST /recover answers an identical
+     200 whether or not the address has an application, so that this cannot be
+     used to discover who applied -- which means this UI must never say "found"
+     or "not found" either. The hedged copy is the whole point.
+
+     Recovery mints a fresh token, so any older link stops working. That is
+     unavoidable: only the hash of a token is stored, so the previous link
+     cannot be reproduced -- hence the warning that the newest email wins. */
+  (function recovery() {
+    var toggle = $('recover-toggle'), box = $('recover-form');
+    if (!toggle || !box) return;
+    var field = $('recover-email'), send = $('recover-send'), status = $('recover-status');
+
+    toggle.addEventListener('click', function () {
+      box.hidden = !box.hidden;
+      toggle.setAttribute('aria-expanded', box.hidden ? 'false' : 'true');
+      if (!box.hidden) field.focus();
+    });
+
+    send.addEventListener('click', function () {
+      var email = String(field.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        status.textContent = 'That email address does not look right.';
+        field.focus();
+        return;
+      }
+
+      send.disabled = true;
+      status.textContent = 'Sending\u2026';
+
+      fetch(api('/recover'), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          return { status: r.status, body: d };
+        });
+      }).then(function (res) {
+        if (res.status === 200) {
+          /* Deliberately hedged: a definite "we sent it" would confirm the
+             address has an application. */
+          box.innerHTML =
+            '<p>If that address has an application in progress, we\u2019ve emailed the ' +
+            'link to it. Check your inbox \u2014 and your spam folder. The newest email ' +
+            'always has the working link; older ones stop working.</p>';
+          return;
+        }
+        status.textContent = res.body && res.body.error
+          ? res.body.error
+          : 'We could not do that right now. Please try again shortly.';
+        send.disabled = false;
+      }).catch(function () {
+        status.textContent = 'We could not reach the server. Please try again shortly.';
+        send.disabled = false;
+      });
+    });
+  })();
+
   /* --------------------------------------------------- save for later --- */
 
   var sheet = document.createElement('dialog');
   sheet.className = 'sheet';
   document.body.appendChild(sheet);
+
+  /* Ask the Worker to mail the resume link. It mails the address stored ON THE
+     APPLICATION and ignores anything this page sends, which is deliberate: the
+     link is a bearer credential for the whole application, so a page that
+     could name the recipient would be a way to post one team's application to
+     an address they never chose. Nothing is passed but the id and token.
+
+     Resolves with what happened rather than rejecting, because this is a
+     bonus on top of a save that has already succeeded -- a failed email must
+     not make a saved draft look unsaved. */
+  function mailResumeLink() {
+    return fetch(api('/email-link'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: state.id, token: state.token })
+    })
+      .then(function (r) { return r.json().catch(function () { return {}; }); })
+      .then(function (d) { return { emailed: !!d.emailed, to: d.sent_to || '' }; })
+      .catch(function () { return { emailed: false, to: '' }; });
+  }
 
   $('save-later').addEventListener('click', function () {
     var email = (form.elements.contact_email.value || '').trim();
@@ -1532,14 +1613,23 @@
     if (typeof sheet.showModal === 'function') sheet.showModal();
 
     pushDraft()
-      .then(function () {
+      /* Saved first, mailed second, and the mail is allowed to fail. An
+         applicant with no email typed in yet still gets the link on screen. */
+      .then(function () { return email ? mailResumeLink() : { emailed: false, to: '' }; })
+      .then(function (mail) {
         var link = resumeUrl();
 
         sheet.innerHTML =
           '<h2 class="h-sm">Saved</h2>' +
-          '<p>Come back to this link any time to pick up where you left off. It’s the only way back into your draft from a different device or browser — keep it somewhere safe.</p>' +
+          (mail.emailed
+            ? '<p>We’ve emailed this link to <strong>' + esc(mail.to || email) + '</strong>, and it’s below as well. ' +
+              'Come back to it any time to pick up where you left off.</p>'
+            : '<p>Come back to this link any time to pick up where you left off. It’s the only way back into your draft from a different device or browser — keep it somewhere safe.</p>') +
           '<div class="resume-link"><input type="text" readonly value="' + esc(link) + '" id="resume-input">' +
           '<button type="button" id="copy-link">Copy</button></div>' +
+          (email && !mail.emailed
+            ? '<p style="font-size:.9rem;opacity:.75">We couldn’t email it just now — copy the link above instead.</p>'
+            : '') +
           '<p style="font-size:.9rem;opacity:.75">Your application is not submitted until you finish the form and pay the fee.</p>' +
           '<div class="form-actions">' +
           '<button type="button" class="btn btn--yellow" id="close-sheet"><span>Back to the form</span></button></div>';

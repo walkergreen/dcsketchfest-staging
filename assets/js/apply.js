@@ -1441,135 +1441,6 @@
     if (window.gtag) gtag('event', 'application_paid');
   }
 
-  /* ------------------------------------------------------ email my link --- */
-
-  /* Where the link goes is not this page's choice: the Worker mails the address
-     stored on the application and ignores anything we send with the request.
-     That is deliberate — the link is a bearer credential for the whole
-     application, so a page that could name the recipient would be a way to post
-     one team's application to an address they never chose. Hence no "send it
-     somewhere else" field here, and copy that promises the address on the
-     application rather than one we could offer to change. */
-  function emailMyLink() {
-    var typed = (form.elements.contact_email.value || '').trim();
-
-    /* Nowhere to send it yet. The Worker says so too, but in a sentence the
-       applicant would have to go looking for; say it at the field instead. */
-    if (!typed) {
-      clearErrors();
-      fieldError('contact_email', 'Add your email address first — that’s where the link goes.');
-      var box = form.elements.contact_email;
-      if (box) { box.focus(); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
-      return Promise.reject(new Error('no_email'));
-    }
-
-    /* A draft is saved first, so the address the Worker mails is the one on the
-       screen. An edit is not: saving is the applicant's own button to press, and
-       saving a paid application raises an email to the organisers — asking for
-       a link should do neither. Which also means an edit's link goes to the
-       address the application already holds, so the confirmation says exactly
-       that rather than naming the typed one. */
-    var saved = !state.editing;
-
-    return (saved ? pushDraft() : Promise.resolve(state))
-      .then(function () {
-        return fetch(api('/email-link'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: state.id, token: state.token })
-        });
-      })
-      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); })
-      .then(function (res) {
-        if (!res.ok) throw new Error(res.body.error || 'email_failed');
-        return { emailed: !!res.body.emailed, to: saved ? typed : null };
-      });
-  }
-
-  /* In the save bar, which is sticky: losing the link is the one problem an
-     applicant cannot solve from inside the form, so the fix cannot be two
-     clicks deep inside another panel. */
-  /* ---------------------------------------------------------- recovery --- */
-
-  /* For an applicant with no link at all. POST /recover answers an identical
-     200 whether or not the address has an application, so that someone cannot
-     use this to discover who applied — which means this UI must never say
-     "found" or "not found" either. The hedged copy below is the whole point;
-     do not "improve" it into a confirmation.
-
-     Recovery mints a fresh token, so any older link stops working. That is
-     unavoidable: only the hash is stored, so the previous link cannot be
-     reproduced. */
-  (function recovery() {
-    var toggle = $('recover-toggle'), box = $('recover-form');
-    var field = $('recover-email'), send = $('recover-send'), status = $('recover-status');
-    if (!toggle || !box) return;
-
-    toggle.addEventListener('click', function () {
-      box.hidden = !box.hidden;
-      if (!box.hidden) field.focus();
-    });
-
-    send.addEventListener('click', function () {
-      var email = String(field.value || '').trim();
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        status.textContent = 'That email address does not look right.';
-        field.focus();
-        return;
-      }
-
-      send.disabled = true;
-      status.textContent = 'Sending…';
-
-      fetch(api('/recover'), {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email: email })
-      }).then(function (r) {
-        return r.json().catch(function () { return {}; }).then(function (d) {
-          return { status: r.status, body: d };
-        });
-      }).then(function (res) {
-        if (res.status === 200) {
-          /* Deliberately hedged: a definite "we sent it" would confirm the
-             address has an application. */
-          box.innerHTML =
-            '<p>If that address has an application in progress, we\u2019ve emailed the ' +
-            'link to it. Check your inbox \u2014 and your spam folder. The newest email ' +
-            'always has the working link; older ones stop working.</p>';
-          return;
-        }
-        status.textContent = res.body && res.body.error
-          ? res.body.error
-          : 'We could not do that right now. Please try again shortly.';
-        send.disabled = false;
-      }).catch(function () {
-        status.textContent = 'We could not reach the server. Please try again shortly.';
-        send.disabled = false;
-      });
-    });
-  })();
-
-  $('email-link-bar').addEventListener('click', function () {
-    var btn = $('email-link-bar');
-    btn.disabled = true;
-    setStatus('Sending your link…', 'saving');
-
-    emailMyLink()
-      .then(function (r) {
-        btn.disabled = false;
-        setStatus(r.emailed
-          ? 'Link sent to ' + (r.to || 'the email address on your application')
-          : 'We couldn’t send that email — copy the link from your address bar instead',
-        r.emailed ? 'saved' : 'error');
-      })
-      .catch(function (err) {
-        btn.disabled = false;
-        setStatus(String(err.message) === 'no_email'
-          ? 'Add your email address and try again'
-          : 'We couldn’t send that email just now — please try again in a moment', 'error');
-      });
-  });
 
   /* --------------------------------------------------- save for later --- */
 
@@ -1591,10 +1462,8 @@
           '<p>Come back to this link any time to pick up where you left off. It’s the only way back into your draft from a different device or browser — keep it somewhere safe.</p>' +
           '<div class="resume-link"><input type="text" readonly value="' + esc(link) + '" id="resume-input">' +
           '<button type="button" id="copy-link">Copy</button></div>' +
-          (email ? '<p id="mail-note">We can email it to <strong>' + esc(email) + '</strong>.</p>' : '') +
           '<p style="font-size:.9rem;opacity:.75">Your application is not submitted until you finish the form and pay the fee.</p>' +
           '<div class="form-actions">' +
-          (email ? '<button type="button" class="text-btn" id="email-link">Email me the link</button>' : '') +
           '<button type="button" class="btn btn--yellow" id="close-sheet"><span>Back to the form</span></button></div>';
 
         $('copy-link').addEventListener('click', function () {
@@ -1607,26 +1476,6 @@
               .catch(function () { document.execCommand('copy'); $('copy-link').textContent = 'Copied'; });
         });
 
-        if (email) {
-          $('email-link').addEventListener('click', function () {
-            var btn = $('email-link');
-            btn.disabled = true;
-            btn.textContent = 'Sending…';
-            // The same action as the one in the save bar, and the same rule
-            // about where it goes: the Worker picks the address, not this page.
-            emailMyLink()
-              .then(function (r) {
-                $('mail-note').innerHTML = r.emailed
-                  ? 'Sent to <strong>' + esc(r.to || email) + '</strong>. Check your spam folder if it doesn’t arrive.'
-                  : 'We couldn’t send that email — please copy the link above instead.';
-                btn.remove();
-              })
-              .catch(function () {
-                btn.disabled = false;
-                btn.textContent = 'Try again';
-              });
-          });
-        }
 
         $('close-sheet').addEventListener('click', function () { sheet.close(); });
       })

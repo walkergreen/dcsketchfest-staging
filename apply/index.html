@@ -13,19 +13,20 @@
 
   gtag('config', 'G-5WTXCDDHMK');
 </script>
-<title>Apply to Perform - DC Sketchfest</title>
-<meta name="description" content="Apply to perform at DC Sketchfest, Washington DC's sketch comedy festival. Save your application and come back to finish it any time.">
+<title>Apply to Perform - DC Sketchfest 2027</title>
+<meta name="description" content="Applications are open for DC Sketchfest 2027, March 31 to April 3 in Washington, DC. Apply by December 13 - save your application and come back to finish it any time.">
 
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://staging.dcsketchfest.com/apply/">
-<meta property="og:title" content="Apply to Perform - DC Sketchfest">
-<meta property="og:description" content="Apply to perform at DC Sketchfest, Washington DC's sketch comedy festival.">
-<meta property="og:image" content="https://dcsketchfest.com/assets/img/brand/og-image.avif">
+<meta property="og:url" content="https://dcsketchfest.com/apply/">
+<meta property="og:title" content="Applications Open - DC Sketchfest 2027">
+<meta property="og:description" content="DC Sketchfest 2027 runs March 31 to April 3 in Washington, DC. Applications are open through December 13.">
+<meta property="og:image" content="https://dcsketchfest.com/assets/img/brand/og-apply-2027.png">
 <meta name="twitter:card" content="summary_large_image">
 
-<!-- Staging copy: the whole site is noindex via robots.txt. Both this and the
-     og:url above become dcsketchfest.com/apply/ when the form goes live. -->
-<link rel="canonical" href="https://staging.dcsketchfest.com/apply/">
+<!-- Absolute URLs name the production host even in this staging copy, the
+     way the homepage does: a preview that mixes hosts is broken on one of
+     them. robots keeps the copy out of the index until the form goes live. -->
+<link rel="canonical" href="https://dcsketchfest.com/apply/">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/assets/img/brand/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/assets/img/brand/favicon-32.png" sizes="32x32">
@@ -44,9 +45,7 @@
 <header class="navbar">
   <div class="nav-inner">
     <div class="nav-bar">
-      <a href="/" class="brand" aria-label="DC Sketchfest home">
-        <span class="wordmark">DC <svg class="wordmark-flag" viewBox="0 0 60 40" aria-hidden="true" focusable="false"><polygon points="11.0,2.5 13.0,8.2 19.1,8.4 14.2,12.1 16.0,17.9 11.0,14.4 6.0,17.9 7.8,12.1 2.9,8.4 9.0,8.2"/><polygon points="30.0,2.5 32.0,8.2 38.1,8.4 33.2,12.1 35.0,17.9 30.0,14.4 25.0,17.9 26.8,12.1 21.9,8.4 28.0,8.2"/><polygon points="49.0,2.5 51.0,8.2 57.1,8.4 52.2,12.1 54.0,17.9 49.0,14.4 44.0,17.9 45.8,12.1 40.9,8.4 47.0,8.2"/><rect x="0" y="23" width="60" height="6"/><rect x="0" y="33" width="60" height="6"/></svg> Sketchfest</span>
-      </a>
+      <a href="/" class="brand" aria-label="DC Sketchfest home"><img class="brand-logo" src="/assets/img/brand/logo-2027.png" alt="DC Sketchfest 2027" width="1000" height="523"></a>
 
       <nav id="nav-links" class="nav-links" aria-label="Main">
         <!-- Matches staging's own nav: no Photos page exists in this repo. -->
@@ -72,7 +71,7 @@
   <div class="pad pad-md">
     <div class="container container--md apply-intro">
       <h1 class="h-lg text-yellow">DC Sketchfest <span data-cfg="year">2027</span> Application</h1>
-      <p class="body-copy text-white" data-cfg="dates_line">March 31&ndash;April 3 at Sitar Arts Center</p>
+      <p class="body-copy text-white" data-cfg="dates_line">March 31&ndash;April 3, 2027 &mdash; venue to be announced</p>
       <p class="body-copy text-white">Washington, DC&rsquo;s <span data-cfg="edition">4th</span> Annual Sketch Comedy Festival</p>
     </div>
   </div>
@@ -91,13 +90,19 @@
 
         <div class="apply-note">
           <h2 class="h-xs">Deadlines</h2>
-          <p data-cfg="deadline_regular">Regular Application ($25) &ndash; Friday, October 31, 11:59 PM ET.</p>
-          <p data-cfg="deadline_late">Late Application ($40) &ndash; Thursday, December 31, 11:59 PM ET.</p>
+          <!-- Rewritten from CONFIG.deadlines in apply.js; the copy below is the
+               no-JS fallback, so the two have to be kept in step. -->
+          <div id="deadlines">
+            <p>Early Application ($25) &ndash; October 15 to November 1.</p>
+            <p>Standard Application ($30) &ndash; November 1 to November 29.</p>
+            <p>Late Application ($40) &ndash; November 30 to December 13.</p>
+            <p><strong>Applications close December 13, 11:59 PM ET.</strong></p>
+          </div>
         </div>
 
         <div class="apply-note">
           <h2 class="h-xs">Location</h2>
-          <p data-cfg="location">All shows are at <a href="https://www.google.com/maps/search/?api=1&amp;query=Sitar+Arts+Center%2C+1700+Kalorama+Rd+NW%2C+Washington%2C+DC+20009" target="_blank" rel="noopener">Sitar Arts Center</a>, 1700 Kalorama Rd NW, Washington, DC 20009.</p>
+          <p data-cfg="location">All shows are in Washington, DC. Venue to be announced.</p>
         </div>
 
         <div class="apply-note">
@@ -194,7 +199,7 @@
 
           <div class="field">
             <label for="tape">Performance Tape <span class="req">*</span></label>
-            <p class="help">Paste a link to your tape &mdash; an unlisted YouTube or Vimeo link is strongly preferred.</p>
+            <p class="help">Paste a link to your tape &mdash; a YouTube or Vimeo link is strongly preferred.</p>
             <input type="url" id="tape" name="tape" placeholder="https://" required>
 
             <details class="guidelines">
@@ -202,7 +207,7 @@
               <ul>
                 <li><strong>Tape length:</strong> submit a 15&ndash;20-minute video. Shorter submissions, such as a 5- or 10-minute tape, won&rsquo;t provide enough material for our judges to score accurately. Material beyond 20 minutes will not be watched.</li>
                 <li><strong>Content order:</strong> include your best material first and prioritize LIVE performance footage. Digital shorts (filmed content) are discouraged unless they strongly reflect your live show style.</li>
-                <li><strong>Video format:</strong> to avoid playback and permission issues, we strongly recommend submitting an unlisted YouTube or Vimeo link instead of using file-sharing sites like Google Drive or Dropbox. If you have multiple videos, please edit them into a single video before submitting.</li>
+                <li><strong>Video format:</strong> to avoid playback and permission issues, we strongly recommend submitting a YouTube or Vimeo link instead of using file-sharing sites like Google Drive or Dropbox. If you have multiple videos, please edit them into a single video before submitting.</li>
                 <li><strong>Judging process:</strong> your submission will be evaluated by a randomly assigned panel in the first round. Tailor your material for an audience unfamiliar with your previous work.</li>
               </ul>
               <p>Email <a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> if you have additional questions.</p>
@@ -226,25 +231,16 @@
         </fieldset>
 
         <fieldset class="field-group">
-          <legend class="h-sm">Optional</legend>
-          <p class="help group-help">Tell us more about your show or team.</p>
+          <legend class="h-sm">Tech</legend>
 
-          <fieldset class="field checkgroup">
-            <legend>If applicable, please check the boxes for which minority group your sketch team represents</legend>
+          <fieldset class="field checkgroup" id="tech-level-group">
+            <legend>Which of these best describes the tech requirements of your show? <span class="req">*</span></legend>
+            <p class="help">Tech time at the venue is limited, so this is what we plan each show&rsquo;s cueing and running order around. Blackouts do not count towards your cues.</p>
             <div class="checks">
-              <label class="check"><input type="checkbox" name="representation" value="Asian"><span>Asian</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Black or African American"><span>Black or African American</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Disabled"><span>Disabled</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Hispanic or Latino"><span>Hispanic or Latino</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="LGBTQ+"><span>LGBTQ+</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Middle Eastern"><span>Middle Eastern</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Native"><span>Native</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Women"><span>Women</span></label>
-              <label class="check"><input type="checkbox" name="representation" value="Other" id="rep-other"><span>Other</span></label>
-            </div>
-            <div class="field" id="rep-other-field" hidden>
-              <label for="representation_other">Please specify</label>
-              <input type="text" id="representation_other" name="representation_other">
+              <label class="check"><input type="radio" name="tech_level" value="Little to No Tech (not counting blackouts there are less than 5 cues)"><span>Little to No Tech (not counting blackouts there are less than 5 cues)</span></label>
+              <label class="check"><input type="radio" name="tech_level" value="Middle to Moderate Tech (not counting blackouts there are less than 15 cues)"><span>Middle to Moderate Tech (not counting blackouts there are less than 15 cues)</span></label>
+              <label class="check"><input type="radio" name="tech_level" value="Moderate to Heavy Tech (not counting blackouts there are less than 25 cues)"><span>Moderate to Heavy Tech (not counting blackouts there are less than 25 cues)</span></label>
+              <label class="check"><input type="radio" name="tech_level" value="Heavy Tech (there is a cue every minute or more of your set)"><span>Heavy Tech (there is a cue every minute or more of your set)</span></label>
             </div>
           </fieldset>
 
@@ -262,9 +258,33 @@
 
           <div class="field">
             <label for="accessibility">Do you have any accessibility requirements or special requests?</label>
-            <p class="help">The performance venue (Sitar Arts Center) is wheelchair-accessible. Let us know about any other access needs and we will do our best to accommodate them.</p>
+            <p class="help">The 2027 venue has not been announced yet. Tell us about any access needs, for you or your audience, and we will factor them in as we book and plan.</p>
             <textarea id="accessibility" name="accessibility" rows="3"></textarea>
           </div>
+        </fieldset>
+
+        <fieldset class="field-group">
+          <legend class="h-sm">Optional</legend>
+          <p class="help group-help">Neither of these is required &mdash; answer as much or as little as you like.</p>
+
+          <fieldset class="field checkgroup">
+            <legend>Do any members of your team identify as:</legend>
+            <div class="checks">
+              <label class="check"><input type="checkbox" name="representation" value="Asian"><span>Asian</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Black or African American"><span>Black or African American</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Hispanic or Latino"><span>Hispanic or Latino</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="LGBTQ+"><span>LGBTQ+</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Middle Eastern"><span>Middle Eastern</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Native"><span>Native</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Person(s) with disabilities"><span>Person(s) with disabilities</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Women"><span>Women</span></label>
+              <label class="check"><input type="checkbox" name="representation" value="Other" id="rep-other"><span>Other</span></label>
+            </div>
+            <div class="field" id="rep-other-field" hidden>
+              <label for="representation_other">Please specify</label>
+              <input type="text" id="representation_other" name="representation_other">
+            </div>
+          </fieldset>
 
           <div class="field">
             <label for="anything_else">Is there anything else we should know?</label>
@@ -290,6 +310,12 @@
         </div>
       </form>
 
+      <!-- Sits outside the form so it is still on the page when the form is
+           swapped out for the confirmation, and still there if the submit
+           itself is what failed. -->
+      <p class="apply-help-out">Having issues submitting this form? Email
+        <a href="mailto:admin@dcsketchfest.com?subject=Trouble%20submitting%20my%20DC%20Sketchfest%20application">admin@dcsketchfest.com</a>.</p>
+
       <!-- Swapped in for the form once the application is submitted. -->
       <div id="done" class="done" hidden></div>
 
@@ -301,9 +327,7 @@
 <footer class="footer">
   <div class="pad pad-sm">
     <div class="container footer-wrapper">
-      <a class="footer-logo" href="/" title="Homepage">
-        <span class="wordmark">DC <svg class="wordmark-flag" viewBox="0 0 60 40" aria-hidden="true" focusable="false"><polygon points="11.0,2.5 13.0,8.2 19.1,8.4 14.2,12.1 16.0,17.9 11.0,14.4 6.0,17.9 7.8,12.1 2.9,8.4 9.0,8.2"/><polygon points="30.0,2.5 32.0,8.2 38.1,8.4 33.2,12.1 35.0,17.9 30.0,14.4 25.0,17.9 26.8,12.1 21.9,8.4 28.0,8.2"/><polygon points="49.0,2.5 51.0,8.2 57.1,8.4 52.2,12.1 54.0,17.9 49.0,14.4 44.0,17.9 45.8,12.1 40.9,8.4 47.0,8.2"/><rect x="0" y="23" width="60" height="6"/><rect x="0" y="33" width="60" height="6"/></svg> Sketchfest</span>
-      </a>
+      <a class="footer-logo" href="/" title="Homepage"><img class="brand-logo brand-logo--light" src="/assets/img/brand/logo-2027-light.png" alt="DC Sketchfest 2027" width="1000" height="511"></a>
       <div class="footer-social">
         <div class="join-us">Follow us on social media!</div>
         <div class="social-links">

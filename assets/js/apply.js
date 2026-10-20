@@ -25,14 +25,20 @@
 
     year: '2027',
     edition: '4th',
-    dates_line: 'March 31–April 3 at Sitar Arts Center',
-    deadline_regular: 'Regular Application ($25) – Friday, October 31, 11:59 PM ET.',
-    deadline_late: 'Late Application ($40) – Thursday, December 31, 11:59 PM ET.',
-    notification: 'All applicants will be contacted mid-January 2027.',
+    dates_line: 'March 31–April 3, 2027 — venue to be announced',
+    location: 'All shows are in Washington, DC. Venue to be announced.',
 
-    /* Only used for the "you already applied but still owe the fee" case; the
-       submit flow uses whatever PAYMENT_URL the Worker is configured with. */
-    payment_url: 'https://crowdwork.com/e/dc-sketchfest-2026-application-fee',
+    /* Three fee windows this year rather than two fixed deadlines, so the
+       page renders this list instead of one line per tier. The Worker's /fee
+       endpoint is what actually sets the fee — these have to agree with it. */
+    deadlines: [
+      'Early Application ($25) – October 15 to November 1.',
+      'Standard Application ($30) – November 1 to November 29.',
+      'Late Application ($40) – November 30 to December 13.'
+    ],
+    deadline_close: 'Applications close December 13, 11:59 PM ET.',
+
+    notification: 'All applicants will be contacted mid-January 2027.',
 
     /* Stored verbatim as the applicant's availability and read straight by the
        schedule builder, so the weekday must match the date. 2027 runs Wed–Sat,
@@ -61,11 +67,12 @@
     { name: 'tape', label: 'Performance Tape', required: true },
     { name: 'show_description', label: 'Show Description', required: true },
     { name: 'dates', label: 'Show dates you are available', required: true, type: 'list' },
-    { name: 'representation', label: 'Representation', type: 'list' },
-    { name: 'representation_other', label: 'Representation (other)' },
+    { name: 'tech_level', label: 'Tech requirements of your show', required: true },
     { name: 'stage_reqs', label: 'Stage requirements' },
     { name: 'tech_reqs', label: 'Tech requirements' },
     { name: 'accessibility', label: 'Accessibility requirements' },
+    { name: 'representation', label: 'Representation', type: 'list' },
+    { name: 'representation_other', label: 'Representation (other)' },
     { name: 'anything_else', label: 'Anything else we should know' },
     { name: 'agree', label: 'Application fee agreement', required: true, type: 'bool' }
   ];
@@ -120,7 +127,13 @@
       if (typeof CONFIG[key] === 'string') el.textContent = CONFIG[key];
     });
   });
-  document.title = 'Apply to Perform - DC Sketchfest';
+  document.title = 'Apply to Perform - DC Sketchfest ' + CONFIG.year;
+
+  /* The page ships this same copy as static markup so a JS failure still
+     shows the deadlines; the two have to be edited together. */
+  $('deadlines').innerHTML = CONFIG.deadlines.map(function (d) {
+    return '<p>' + esc(d) + '</p>';
+  }).join('') + '<p><strong>' + esc(CONFIG.deadline_close) + '</strong></p>';
 
   var dateChecks = $('dates-checks');
   dateChecks.innerHTML = CONFIG.dates.map(function (d) {
@@ -570,6 +583,9 @@
     contact_phone: '202-555-0100',
     tape: 'https://vimeo.com/76979871',
     show_description: 'TEST submission used to check the application flow end to end.',
+    // Not TEST-prefixed: a radio stays unchecked unless the value is one of
+    // the options, which would leave the prefilled form failing validation.
+    tech_level: 'Little to No Tech (not counting blackouts there are less than 5 cues)',
     stage_reqs: 'TEST — two chairs.',
     tech_reqs: 'TEST — one mic.',
     accessibility: '',
@@ -1020,9 +1036,13 @@
             '<h2 class="h-md">This application is already in</h2>' +
             '<p>We received it on ' + esc(new Date(d.submitted_at).toLocaleDateString()) + '. ' +
             'Your reference is <span class="ref">' + esc(d.id) + '</span>.</p>' +
-            '<p>If you still need to pay the application fee, you can do that here.</p>' +
-            '<p><a class="btn btn--purple" href="' + esc(CONFIG.payment_url) + '"><span>Pay the application fee</span></a></p>' +
-            '<p>Something wrong? Email <a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> and quote your reference.</p>' +
+            // The fee URL lives in the Worker's settings and only comes back
+            // with a submit response, so this panel has none to offer — send
+            // them to a person rather than to last year's checkout.
+            '<p>If you still need to pay the application fee, email ' +
+            '<a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> with your ' +
+            'reference and we’ll send you the payment link.</p>' +
+            '<p>Something wrong? Same address — quote your reference.</p>' +
             '<p><a href="' + esc(location.pathname) + '">Apply with a different team</a></p>';
           return;
         }

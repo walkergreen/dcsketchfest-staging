@@ -1,6 +1,6 @@
 /* ==========================================================================
    DC Sketchfest — 2027 rebrand
-   "Riso print shop": cobalt, fluorescent pink and sun yellow inks on warm
+   "Riso print shop": Neon Blue, Bubble Pink and Mustard inks on Mayo White
    paper, heavy outlines, hard offset shadows, halftone dots, DC-flag stars.
    Display type is Anton; body is Space Grotesk.
 
@@ -11,11 +11,13 @@
    ========================================================================== */
 
 :root {
-  --ink: #211b3a;
-  --paper: #f6efe1;
-  --blue: #2b3fbf;
-  --pink: #ef4d8e;
-  --yellow: #ffc933;
+  /* Brand names, in order: Midnite Black, Mayo White, Neon Blue, Bubble Pink,
+     Mustard. --white is a paper highlight, not a brand ink. */
+  --ink: #312545;
+  --paper: #F4EBDF;
+  --blue: #2C3FBE;
+  --pink: #E8558F;
+  --yellow: #EDBD34;
   --white: #fffdf8;
 
   /* Legacy names still referenced by inline styles and generated pages. */
@@ -38,7 +40,7 @@
 
   /* Halftone dot patterns, tinted per background. */
   --dots-light: radial-gradient(rgba(255, 253, 248, .16) 1.5px, transparent 1.5px);
-  --dots-dark: radial-gradient(rgba(33, 27, 58, .07) 1.5px, transparent 1.5px);
+  --dots-dark: radial-gradient(rgba(49, 37, 69, .07) 1.5px, transparent 1.5px);
 }
 
 @media (max-width: 767px) {
@@ -250,46 +252,24 @@ h5 {
   .btn-row { gap: 1rem; }
 }
 
-/* ----------------------------------------------------------- wordmark --- */
-
-/* Text lockup replacing the old PNG logo: DC ★★★ SKETCHFEST, the three
-   stars straight off the DC flag. */
-.wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: .45rem;
-  font-family: var(--font-display);
-  text-transform: uppercase;
-  letter-spacing: .02em;
-  line-height: 1;
-  color: var(--ink);
-  white-space: nowrap;
-}
-
-/* The DC flag itself — three stars over two bars — drawn at the wordmark's
-   cap height and inheriting its color. */
-.wordmark-flag {
-  width: 1.5em;
-  height: 1em;
-  flex: none;
-  align-self: center;
-  fill: var(--pink);
-  overflow: visible;
-}
-
-/* Retained so any cached page still rendering the old ★★★ span looks right. */
-.wordmark-stars {
-  color: var(--pink);
-  font-size: .62em;
-  letter-spacing: .12em;
-  transform: translateY(-.12em);
-}
+/* --------------------------------------------------------------- logo --- */
 
 .brand {
   text-decoration: none;
 }
 
-.brand .wordmark { font-size: clamp(1.25rem, 2vw, 1.6rem); }
+/* Height drives the lockup and the width follows it, so nothing here has to
+   know the artwork's aspect ratio; the width/height attributes on the <img>
+   are what stop the navbar reflowing while it loads. */
+.brand-logo {
+  display: block;
+  width: auto;
+  height: 2.75rem;
+}
+
+@media (max-width: 767px) {
+  .brand-logo { height: 2.25rem; }
+}
 
 /* ---------------------------------------------------------------- nav --- */
 
@@ -458,7 +438,7 @@ h5 {
     -2px 2px 0 var(--ink);
 }
 
-/* Rotated year sticker pinned beside the wordmark. */
+/* Rotated year sticker pinned beside the hero title. */
 .hero-title-wrap {
   position: relative;
   display: inline-block;
@@ -576,44 +556,107 @@ h5 {
   to { transform: translateX(-50%); }
 }
 
+/* --------------------------------------------------------- dates/fees --- */
+
+/* The three application windows as one card: the wrapper carries the outline,
+   radius and shadow so the table itself can scroll inside it on a narrow
+   phone rather than pushing the page wider. */
+.fee-table-wrap {
+  max-width: 42rem;
+  margin: 2.5rem auto 0;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--blue);
+  overflow-x: auto;
+}
+
+.fee-table {
+  width: 100%;
+  min-width: 19rem;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.fee-table th,
+.fee-table td {
+  padding: 1rem 1.25rem;
+}
+
+.fee-table thead th {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 1rem;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: var(--paper);
+  padding: .8rem 1.25rem;
+}
+
+/* The fee column reads as a price list, so its header sits over the numbers. */
+.fee-table thead th:last-child,
+.fee-price {
+  text-align: right;
+}
+
+.fee-row + .fee-row {
+  border-top: 2px solid var(--ink);
+}
+
+.fee-row th {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* The window you can actually apply in is filled, not just ruled — it has to
+   be the row you land on before reading any dates. */
+.fee-row.is-open {
+  background: var(--yellow);
+}
+
+.fee-flag {
+  display: inline-block;
+  margin-left: .5rem;
+  padding: .2rem .6rem .25rem;
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-pill);
+  background: var(--blue);
+  color: var(--paper);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: .68em;
+  letter-spacing: .06em;
+  white-space: nowrap;
+  vertical-align: .14em;
+}
+
+.fee-price {
+  font-family: var(--font-display);
+  font-size: 1.35em;
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+
+.fee-note {
+  margin: 1.5rem auto 0;
+  max-width: 34rem;
+}
+
+@media (max-width: 767px) {
+  .fee-table th,
+  .fee-table td { padding: .8rem .9rem; }
+
+  .fee-table thead th { padding: .7rem .9rem; font-size: .9rem; }
+}
+
 /* ------------------------------------------------------------ tickets --- */
 
 .tickets-heading {
   text-align: center;
   margin-bottom: 2.5rem;
-}
-
-/* Between festivals the calendar's place is held by a big ticket stub —
-   white card, dashed inner rule, slight tilt. */
-.coming-soon {
-  position: relative;
-  text-align: center;
-  border: var(--border);
-  border-radius: var(--radius-card);
-  background: var(--white);
-  padding: 4rem 2.5rem 3.5rem;
-  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
-  transform: rotate(-1deg);
-}
-
-.coming-soon::before {
-  content: "";
-  position: absolute;
-  inset: .75rem;
-  border: 2px dashed var(--pink);
-  border-radius: calc(var(--radius-card) - 8px);
-  pointer-events: none;
-}
-
-.coming-soon .body-copy {
-  margin: 1.5rem auto 0;
-  max-width: 34rem;
-}
-
-.coming-soon .btn-row { margin-top: 2rem; }
-
-@media (max-width: 767px) {
-  .coming-soon { padding: 2.5rem 1.25rem 2rem; }
 }
 
 /* Year switcher on the lineup pages. */
@@ -915,9 +958,18 @@ h5 {
   .press-grid { grid-template-columns: 1fr; gap: 3rem; }
 }
 
+/* Ink on the pink ink is only 4.14:1, short of AA, and reversing to white is
+   worse (3.37:1). The paragraph sits on a white card instead — the move
+   .venue-tba already makes — which reads as 13.95:1. */
 .press-copy .body-copy {
   color: var(--ink);
   margin-top: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--yellow);
+  transform: rotate(1deg);
 }
 
 .press-photo-wrap {
@@ -960,6 +1012,7 @@ h5 {
 
 @media (max-width: 767px) {
   .press-photo-wrap::before { font-size: 5.5rem; top: -2.5rem; left: -1rem; }
+  .press-copy .body-copy { padding: 1.25rem; }
 }
 
 /* -------------------------------------------------------------- venue --- */
@@ -1265,10 +1318,15 @@ h5 {
 .signup-note a,
 .signup-status a { color: var(--yellow); }
 
+/* Yellow is the link color for the ink and cobalt sections. On paper or
+   mustard it drops to about 1.5:1, so the light sections take cobalt. */
 .link {
   color: var(--yellow);
   text-decoration: underline;
 }
+
+.section--cream .link,
+.section--yellow .link { color: var(--blue); }
 
 /* ------------------------------------------------------------- footer --- */
 
@@ -1290,18 +1348,16 @@ h5 {
   text-decoration: none;
 }
 
-/* The rebrand dropped the footer logo image, but a browser holding a cached
-   copy of the old markup would render it at full natural size. Keep it sized. */
-.footer-logo img {
-  width: min(14rem, 45vw);
+/* Down here the mark is the row's main event rather than one item in a bar,
+   so it runs wider than the navbar lockup. Width drives it because what this
+   row budgets is horizontal space; both files are now the same tight crop
+   (1000x523 dark, 1000x511 light), so the reversed mark lands at the same
+   size as the dark one. */
+.footer-logo .brand-logo,
+.brand-logo--light {
+  width: 11rem;
+  height: auto;
 }
-
-.footer-logo .wordmark {
-  font-size: clamp(1.5rem, 3vw, 2.25rem);
-  color: var(--paper);
-}
-
-.footer-logo .wordmark-stars { color: var(--yellow); }
 
 .footer-social {
   text-align: right;
@@ -1358,6 +1414,9 @@ h5 {
   .footer-wrapper { flex-direction: column; text-align: center; }
   .footer-social { text-align: center; }
   .social-links { justify-content: center; }
+
+  .footer-logo .brand-logo,
+  .brand-logo--light { width: 9rem; }
 }
 
 /* ------------------------------------------------------- lineup page --- */

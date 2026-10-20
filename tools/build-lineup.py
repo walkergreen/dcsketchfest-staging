@@ -74,9 +74,9 @@ PAGE = """<!DOCTYPE html>
       <a href="/" class="brand" aria-label="DC Sketchfest home"><img class="brand-logo" src="/assets/img/brand/logo-2027.png" alt="DC Sketchfest 2027" width="1000" height="523"></a>
 
       <nav id="nav-links" class="nav-links" aria-label="Main">
+        <a class="nav-link" href="/#about-section">2027</a>
         <a class="nav-link" href="/apply/">Apply</a>
         <a class="nav-link" href="/volunteer/">Volunteer</a>
-        <a class="nav-link" href="/#about-section">2027</a>
         <a class="nav-link" href="/performers-{newest}/" aria-current="page">Past Lineups</a>
         <a class="nav-link" href="/#faq-section">FAQ</a>
         <a class="nav-link" href="mailto:admin@dcsketchfest.com?subject=Question">Contact</a>

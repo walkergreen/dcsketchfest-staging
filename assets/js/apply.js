@@ -32,7 +32,7 @@
        page renders this list instead of one line per tier. The Worker's /fee
        endpoint is what actually sets the fee — these have to agree with it. */
     deadlines: [
-      'Early Application ($25) – October 15 to November 1.',
+      'Early Application ($25) – October 20 to November 1.',
       'Standard Application ($30) – November 1 to November 29.',
       'Late Application ($40) – November 30 to December 13.'
     ],

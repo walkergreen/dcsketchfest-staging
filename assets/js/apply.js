@@ -21,7 +21,7 @@
        is served from localhost, so one file works in both places. */
     api: /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
       ? 'http://localhost:8789/api/apply'
-      : 'https://dcsketchfest-app.greenroom.workers.dev/api/apply',
+      : 'https://dcsketchfest-app.walker-df2.workers.dev/api/apply',
 
     year: '2027',
     edition: '4th',
@@ -37,6 +37,13 @@
       'Late Application ($40) – November 30 to December 13.'
     ],
     deadline_close: 'Applications close December 13, 11:59 PM ET.',
+
+    /* Read by someone who has already applied, so it is in the second person.
+       Editing stops when applications close, which is the same December 13 as
+       the line above — the Worker is what enforces it, these two only explain
+       it, so all three move together. */
+    edit_window: 'You can change your answers until applications close on December 13.',
+    edit_closed: 'December 13 has passed, so a change may no longer be saved.',
 
     notification: 'All applicants will be contacted mid-January 2027.',
 
@@ -93,7 +100,17 @@
   var errorBox = $('errors');
   var done = $('done');
 
-  var state = { id: null, token: null, photo: null, dirty: false, saving: false, submitted: false };
+  /* `submitted` means this application is in. `editing` means we are looking
+     at one that is in and the applicant is changing it, which is a different
+     screen and a different kind of save. `paid` stays null until the server has
+     been asked, because "we don't know yet" must not be shown as either
+     answer. */
+  var state = {
+    id: null, token: null, photo: null, serverPhoto: null,
+    dirty: false, saving: false, submitted: false,
+    editing: false, paid: null, submittedAt: null, editedAt: null,
+    editable: true, editNotice: '', savedAt: null, saveRefused: false
+  };
   var saveTimer = null;
 
   /* ---------------------------------------------------------- helpers --- */
@@ -104,6 +121,16 @@
     return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
     });
+  }
+
+  /* `.save-bar` sets its own `display`, which beats the hidden attribute, so
+     the bar needs a style to actually leave the page. It has to leave: once the
+     form is swapped for a panel there is nothing left to save, and the
+     email-my-link button has no business sitting over a confirmation. */
+  function hideSaveBar() {
+    if (!saveBar) return;
+    saveBar.hidden = true;
+    saveBar.style.display = 'none';
   }
 
   function setStatus(text, stateName) {
@@ -118,6 +145,27 @@
 
   function writeLocal(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) { /* private mode */ }
+  }
+
+  /* The link back into this application from any device. It is a bearer
+     credential for the whole application, which is why it is only ever shown
+     to someone already holding it and only ever mailed to the address the
+     application itself carries. */
+  function resumeUrl() {
+    return location.origin + location.pathname +
+      '?id=' + encodeURIComponent(state.id) + '&t=' + encodeURIComponent(state.token);
+  }
+
+  function fmtDate(iso) {
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? String(iso) : d.toLocaleDateString();
+  }
+
+  /* An edit gets the time as well as the day: two corrections on the same
+     afternoon are otherwise indistinguishable. */
+  function fmtDateTime(iso) {
+    var d = new Date(iso);
+    return isNaN(d.getTime()) ? String(iso) : d.toLocaleString();
   }
 
   /* ---------------------------------------------------- render config --- */
@@ -185,6 +233,21 @@
 
   function touch() {
     state.dirty = true;
+
+    /* An edit to a submitted application is deliberately not autosaved, and
+       deliberately not kept in localStorage either. Every server-side save of a
+       paid application raises an email to the organisers naming the fields that
+       changed, so a save per keystroke would mail them thirty half-typed
+       answers; and this browser's draft slot belongs to whoever opens /apply/
+       next, who must not inherit another team's answers. The unload warning is
+       what guards an edit against a closed tab. */
+    if (state.editing) {
+      setStatus(state.saveRefused
+        ? 'This application can’t be changed — see the message by the button'
+        : 'Unsaved change — press Save changes', state.saveRefused ? 'error' : '');
+      return;
+    }
+
     writeLocal(LS_DATA, collect());
     if (state.id) {
       setStatus('Saving…', 'saving');
@@ -200,7 +263,7 @@
      concurrent calls share the one in-flight request rather than racing to
      create two rows — or worse, reading state.id before it exists. */
   function pushDraft() {
-    if (state.submitted) return Promise.resolve(state);
+    if (state.submitted && !state.editing) return Promise.resolve(state);
     if (state.saving) return state.savePromise;
     state.saving = true;
     setStatus('Saving…', 'saving');
@@ -213,20 +276,43 @@
       body: JSON.stringify({ id: state.id, token: state.token, data: JSON.parse(sent) })
     })
       .then(function (r) {
-        if (!r.ok) throw new Error('save failed (' + r.status + ')');
+        /* Carry the status and the Worker's own sentence: an edit refused
+           because applications have closed needs a different answer from a save
+           that merely failed. */
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            var err = new Error(d.error || 'save failed (' + r.status + ')');
+            err.status = r.status;
+            err.editsClosed = !!d.edits_closed;
+            /* A 404 here almost always means the token was rotated by a
+               recovery email, not that the application vanished: this tab is
+               holding a link that has since been replaced. Saying "we could
+               not find it" would read as lost work. */
+            err.linkReplaced = r.status === 404 && !!state.id;
+            throw err;
+          });
+        }
         return r.json();
       })
       .then(function (d) {
         state.id = d.id;
         state.token = d.token;
+        /* `edited_at` is the Worker's stamp for when the ANSWERS last moved,
+           which is not `updated_at` — a save that changed nothing leaves it
+           where it was, and that is the honest thing to show. */
+        state.savedAt = d.edited_at || null;
+        state.editedAt = d.edited_at || state.editedAt;
         // Anything typed while the request was in flight didn't make this trip.
         state.dirty = JSON.stringify(collect()) !== sent;
-        writeLocal(LS_KEYS, { id: d.id, token: d.token });
-        setStatus('Saved — you can finish later', 'saved');
+        // See touch(): a submitted application is never left on this device.
+        if (!state.editing) writeLocal(LS_KEYS, { id: d.id, token: d.token });
+        setStatus(state.editing ? 'Change saved' : 'Saved — you can finish later', 'saved');
         return state;
       })
       .catch(function (err) {
-        setStatus('Couldn’t reach the server — saved on this device only', 'error');
+        setStatus(state.editing
+          ? 'Couldn’t save that change — your answers are still on this screen'
+          : 'Couldn’t reach the server — saved on this device only', 'error');
         throw err;
       })
       .then(
@@ -246,6 +332,13 @@
     }
   }
 
+  /* Somewhere for an upload to go. A draft gets an application created on the
+     spot; an edit already has one, and must not have the form's half-typed
+     state pushed up as a side effect of adding a photo. */
+  function ensureDraft() {
+    return state.id ? Promise.resolve(state) : pushDraft();
+  }
+
   /* --------------------------------------------------------- the photo --- */
 
   var dropzone = $('dropzone');
@@ -258,7 +351,20 @@
     state.photo = { name: name };
     if (src) { preview.src = src; preview.hidden = false; }
     dropText.innerHTML = esc(name) + ' — <span class="link">choose a different photo</span>';
-    removeBtn.hidden = false;
+    /* The photo on a submitted application can be replaced but not taken away,
+       so while editing the dropzone is the only affordance offered. */
+    removeBtn.hidden = state.editing;
+  }
+
+  /* The photo the server already holds. Remembered as well as shown: a
+     replacement that fails has to fall back to it rather than leaving the
+     field looking empty. */
+  function showStoredPhoto(row, token) {
+    state.serverPhoto = {
+      name: row.photo.name,
+      src: api('/photo?id=' + encodeURIComponent(row.id) + '&token=' + encodeURIComponent(token))
+    };
+    showPhoto(state.serverPhoto.name, state.serverPhoto.src);
   }
 
   function clearPhoto() {
@@ -315,7 +421,7 @@
 
     // The upload needs somewhere to go, so this is one of the moments a
     // server-side draft gets created.
-    pushDraft()
+    ensureDraft()
       .then(function () { return downscale(file); })
       .then(function (blob) {
         var name = file.name.replace(/\.(heic|heif|png|webp)$/i, '.jpg');
@@ -326,19 +432,33 @@
         });
       })
       .then(function (r) {
-        if (!r.ok) return r.json().then(function (d) { throw new Error(d.error || r.status); });
+        if (!r.ok) {
+          return r.json().catch(function () { return {}; }).then(function (d) {
+            var err = new Error(d.error || r.status);
+            err.status = r.status;
+            err.editsClosed = !!d.edits_closed;
+            throw err;
+          });
+        }
         return r.json();
       })
       .then(function (d) {
+        state.serverPhoto = { name: d.name, src: localUrl };
         showPhoto(d.name, localUrl);
         setStatus('Photo uploaded — saved', 'saved');
       })
       .catch(function (err) {
-        var why = String(err.message) === 'too_large' || String(err.message) === 'too_large_no_r2'
-          ? 'that photo is too big — try one under 10 MB'
-          : 'the upload didn’t go through — check your connection and try again';
+        var why = err.editsClosed
+          ? String(err.message)
+          : err.status === 413 || String(err.message) === 'too_large' ||
+            String(err.message) === 'too_large_no_r2'
+            ? 'that photo is too big — try one under 10 MB'
+            : 'the upload didn’t go through — check your connection and try again';
         setStatus('Photo not saved: ' + why, 'error');
-        clearPhoto();
+        /* A failed replacement must not look like the photo is gone: the
+           application still has the one the server already holds. */
+        if (state.serverPhoto) showPhoto(state.serverPhoto.name, state.serverPhoto.src);
+        else clearPhoto();
       });
   }
 
@@ -443,6 +563,22 @@
 
     var button = $('submit');
     button.disabled = true;
+
+    /* A change to an application that is already in is a save, not a second
+       submission: /submit would hand back a payment link and make correcting a
+       typo look like being charged twice. */
+    if (state.editing) {
+      button.querySelector('span').textContent = 'Saving…';
+      pushDraft()
+        .then(function () { showEditSaved(); })
+        .catch(function (err) {
+          button.disabled = false;
+          button.querySelector('span').textContent = 'Save changes';
+          editSaveFailed(err);
+        });
+      return;
+    }
+
     button.querySelector('span').textContent = 'Submitting…';
 
     pushDraft()
@@ -477,7 +613,7 @@
 
   function showSubmitted(body, data) {
     form.hidden = true;
-    if (saveBar) saveBar.hidden = true;
+    hideSaveBar();
     done.hidden = false;
 
     var reference =
@@ -516,6 +652,208 @@
     if (inForm) mountPayment(body);
   }
 
+  /* -------------------------------------------------- editing an entry --- */
+
+  /* A resume link for an application that is already in reopens the form with
+     the answers in it, because until applications close a team can still
+     correct what they sent. Three things have to be unmistakable: the
+     application is in, this is a change to that one rather than a second
+     application, and changes stop at the deadline. */
+  function openForEditing(d, keys) {
+    /* Not remembered on this device. /apply/ in this browser is the next team's
+       blank form, and a remembered key would reopen this application instead of
+       giving them one. The link is what gets back in. */
+    try { localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_KEYS); } catch (err) {}
+
+    state.submitted = true;
+    state.editing = true;
+    state.submittedAt = d.submitted_at;
+    /* Only the server's own edit stamp counts. `updated_at` also moves when a
+       PaymentIntent is created and again when the webhook lands, so reading
+       that as "last changed" would tell almost every applicant they had edited
+       an application they had only paid for. */
+    state.editedAt = d.edited_at || null;
+    /* Whether this one may still be changed is the Worker's answer, not a
+       guess from the fee window: the fee tiers and `applications_phase` are
+       separate switches, and only the Worker knows where the second one is.
+       `editable` is absent on an older Worker, which reads as open — the save
+       itself is still the authority. */
+    state.editable = d.editable !== false;
+    state.editNotice = d.edit_notice || '';
+
+    /* Start from an empty form: whatever a half-finished draft left in this
+       browser belongs to a different application, and fill() only overwrites
+       the answers this one actually holds. */
+    form.reset();
+    clearPhoto();
+    clearErrors();
+    fill(d.data);
+    if (d.photo) showStoredPhoto(d, keys.token);
+
+    /* "Submit and pay" and "Save & finish later" are both the wrong promise
+       now, and nothing on this page can clear an application that is in.
+       `.btn` carries its own `display`, which wins against the hidden
+       attribute, so that one is taken out with a style as well. */
+    var button = $('submit');
+    if (button) button.querySelector('span').textContent = 'Save changes';
+    var later = $('save-later');
+    if (later) { later.hidden = true; later.style.display = 'none'; }
+    if ($('clear')) $('clear').hidden = true;
+
+    if (state.editable) {
+      setStatus('Your application is in — you’re editing it', 'saved');
+    } else {
+      /* The Worker has already said no. Better to show that here than to let
+         someone retype a bio and lose it to a refusal. The answers stay on
+         screen and stay selectable — what goes is the button that would
+         promise to save them. */
+      state.saveRefused = true;
+      if (button) {
+        button.disabled = true;
+        button.querySelector('span').textContent = 'Changes are closed';
+      }
+      setStatus('Your application is in — it can no longer be changed', 'error');
+    }
+    renderNotice();
+
+    paymentState(d, keys.token).then(function (fee) {
+      state.paid = fee.paid;
+      /* The rule for every screen from here on: someone who has paid is never
+         shown a fee or a pay button for changing an answer. */
+      if (state.paid === true && $('fee-paid-note')) $('fee-paid-note').hidden = false;
+      renderNotice();
+    });
+  }
+
+  /* Has the fee been paid? It decides whether a saved change ends on "nothing
+     else to do" or on the payment step, so it is read from the server: `paid`
+     on the draft response when it is there, the payment endpoint when it is
+     not. null means neither could be reached, which the panels treat as "we
+     can't promise either way" rather than picking an answer. */
+  function paymentState(d, token) {
+    if (typeof d.paid === 'boolean') return Promise.resolve({ paid: d.paid });
+    return fetch(api('/payment-status?id=' + encodeURIComponent(d.id) +
+                     '&token=' + encodeURIComponent(token)))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (p) { return { paid: p && p.ok ? !!p.paid : null }; })
+      .catch(function () { return { paid: null }; });
+  }
+
+  function showEditSaved() {
+    state.dirty = false;
+    form.hidden = true;
+    hideSaveBar();
+    done.hidden = false;
+
+    var received = state.submittedAt ? ' on ' + esc(fmtDate(state.submittedAt)) : '';
+    var when = state.savedAt ? ' — last changed on ' + esc(fmtDateTime(state.savedAt)) : '';
+    var reference = '<p>Your reference is <span class="ref">' + esc(state.id) + '</span>.</p>';
+    var updated =
+      '<h2 class="h-md">Your changes are saved</h2>' +
+      '<p>We have updated the application you sent us' + received + when + '. ' +
+      'This is still the one application; nothing here starts a second one.</p>';
+
+    /* Paid: the whole panel. No amount, no pay button, nothing that could be
+       read as a second charge for fixing a typo. */
+    if (state.paid === true) {
+      done.innerHTML = updated +
+        '<p>Your application fee is paid, so there is nothing else to do.</p>' +
+        '<p><a href="' + esc(resumeUrl()) + '">Make another change</a>, or email ' +
+        '<a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> if something ' +
+        'still is not right.</p>' +
+        reference;
+      done.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      if (window.gtag) gtag('event', 'application_edited');
+      return;
+    }
+
+    /* Unpaid, or unknown: saving a change does not make an application
+       complete, so the fee step is still the fee step. In Stripe mode the card
+       field is mounted — /pay-intent answers `paid: true` for anyone who has
+       already paid, so an unknown state corrects itself on this screen rather
+       than chasing someone for money they have already sent. */
+    var amount = notice.amount_cents;
+    var inForm = notice.mode === 'stripe';
+
+    done.innerHTML = updated +
+      (state.paid === false
+        ? '<p><strong>You’re not done yet.</strong> Your application is incomplete until you ' +
+          'pay the application fee' +
+          (amount ? ' of <strong>' + money(amount) + '</strong>' : '') + '.</p>'
+        : '<p>If you have not paid the application fee yet, your application is incomplete ' +
+          'until you do.</p>') +
+      (inForm
+        ? '<div id="pay-wrap">' +
+            '<div id="payment-element"></div>' +
+            '<p class="pay-error" id="pay-error" hidden></p>' +
+            '<button type="button" class="btn btn--purple" id="pay-btn"><span>Pay ' +
+              (amount ? money(amount) : 'the application fee') + '</span></button>' +
+          '</div>'
+        /* The fee URL lives in the Worker's settings and only comes back with a
+           submit response, so this panel has none to offer — send them to a
+           person rather than to last year's checkout. */
+        : '<p>Email <a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> with ' +
+          'your reference and we’ll send you the payment link.</p>') +
+      '<p>All sales are final and non-refundable. Payment does not guarantee entry. ' +
+      esc(CONFIG.notification) + '</p>' +
+      reference;
+
+    done.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (window.gtag) gtag('event', 'application_edited');
+    if (inForm) mountPayment({});
+  }
+
+  /* A save the server would not take. The deadline is the server's to enforce,
+     so this reports what it said rather than deciding for itself — and it
+     leaves the answers on the screen, where they can at least be copied into
+     an email, instead of clearing the form. */
+  function editSaveFailed(err) {
+    var status = err && err.status;
+    var refused = (err && err.editsClosed) || status === 403 || status === 409 || status === 410;
+
+    errorBox.hidden = false;
+
+    /* Not a failure so much as a stale tab: a recovery email rotates the token,
+       so the link this page is holding has been superseded. Telling someone
+       their application could not be found would be both wrong and alarming. */
+    if (err && err.linkReplaced) {
+      errorBox.textContent = 'This link has been replaced. We emailed you a newer one — ' +
+        'open the most recent email from us and carry on there. Your answers are safe; ' +
+        'nothing here has been lost.';
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    if (!refused) {
+      errorBox.textContent = 'We couldn’t save that change just now. Your answers are still ' +
+        'on this screen — please try again in a moment, or email admin@dcsketchfest.com.';
+      errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      return;
+    }
+
+    /* Refused for good: stop offering a button that cannot work, and say so at
+       the top of the page as well, where someone who scrolls back up looks. */
+    state.saveRefused = true;
+    state.editable = false;
+    state.editNotice = err.message || '';
+    renderNotice();
+
+    var button = $('submit');
+    if (button) {
+      button.disabled = true;
+      button.querySelector('span').textContent = 'Changes are closed';
+    }
+
+    /* The Worker's sentence is the explanation — it knows which deadline bit,
+       and it already says that nothing has been lost. All this adds is the
+       reference, which it cannot know. */
+    errorBox.innerHTML =
+      '<p>' + esc(err.message || ('Applications have closed, so this application can no ' +
+                  'longer be changed. ' + CONFIG.deadline_close)) + '</p>' +
+      '<p>Quote your reference ' + esc(state.id) + ' if you email us about it.</p>';
+    errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
   /* ------------------------------------------------------------- pay --- */
 
   /* Stripe.js is only fetched once someone actually reaches the payment step,
@@ -523,6 +861,17 @@
      spend filling it in. Card fields live in Stripe's own iframes — card
      numbers never touch this page or the festival's servers. */
   /* ------------------------------------------------- deadline warning --- */
+
+  /* The single notice at the top of the page. Two answers arrive on their own
+     schedule — what the fee window is doing (/fee) and which application the
+     link in the URL opens (/draft) — and both change what it should say, so
+     each records what it learned and asks for one redraw. One element,
+     replaced rather than appended, so the second answer cannot stack a second
+     banner under the first. */
+  var notice = {
+    known: false, open: true, grace: false, warning: '',
+    mode: '', amount_cents: null, el: null
+  };
 
   /* Ask the Worker what the fee is right now. Someone arriving in the grace
      window needs to know their application is provisional BEFORE they spend
@@ -533,8 +882,16 @@
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d || !d.ok) return;
-        if (!d.open) return showClosed();
-        if (d.grace && d.warning) showGraceWarning(d.warning);
+        notice.known = true;
+        notice.open = !!d.open;
+        notice.grace = !!d.grace;
+        notice.warning = d.warning || '';
+        /* Kept for the panel a saved edit lands on: an unpaid application still
+           owes the fee, and that panel has no submit response to learn the
+           amount or the payment mode from. */
+        notice.mode = d.payments_mode || '';
+        notice.amount_cents = d.amount_cents || null;
+        renderNotice();
       })
       .catch(function () { /* never block the form on this */ });
   }
@@ -548,14 +905,43 @@
     return el;
   }
 
-  function showGraceWarning(text) {
-    banner('apply-banner--warn', '<strong>Past the deadline.</strong> ' + esc(text));
-  }
+  function renderNotice() {
+    var cls = 'apply-banner--warn';
+    var html = '';
+    var closed = notice.known && !notice.open;
 
-  function showClosed() {
-    banner('apply-banner--closed',
-      '<strong>Applications are closed.</strong> Thanks for your interest — ' +
-      'follow us on social media and we will announce next year’s dates there.');
+    if (state.editing) {
+      closed = !state.editable;
+      /* Everything an applicant who followed their own link back here has to
+         understand before they touch a field: which application this is, that
+         it is already in, when it last changed, where the fee stands, and that
+         the window closes. */
+      html = '<strong>This application is already in.</strong> ' +
+        (state.submittedAt ? 'We received it on ' + esc(fmtDate(state.submittedAt)) + '. ' : '') +
+        'Changing an answer here updates that application — it does not start a new one.' +
+        (state.editedAt ? ' Last changed ' + esc(fmtDateTime(state.editedAt)) + '.' : '') +
+        (state.paid === true
+          ? ' Your application fee is paid; changing an answer costs nothing.' : '') +
+        (state.paid === false
+          ? ' Your application fee is still outstanding — your application is not complete ' +
+            'until it is paid.' : '') +
+        '<br>' +
+        (closed
+          ? (state.editNotice
+              ? esc(state.editNotice)
+              : '<strong>Applications have closed.</strong> ' + esc(CONFIG.edit_closed))
+          : esc(CONFIG.edit_window) + ' Nothing you change is saved until you press ' +
+            '<strong>Save changes</strong> at the end of the form.');
+    } else if (closed) {
+      cls = 'apply-banner--closed';
+      html = '<strong>Applications are closed.</strong> Thanks for your interest — ' +
+        'follow us on social media and we will announce next year’s dates there.';
+    } else if (notice.known && notice.grace && notice.warning) {
+      html = '<strong>Past the deadline.</strong> ' + esc(notice.warning);
+    }
+
+    if (notice.el) { notice.el.remove(); notice.el = null; }
+    if (html) notice.el = banner(cls, html);
   }
 
   /* ------------------------------------------------------ admin bypass --- */
@@ -698,7 +1084,7 @@
     if (!code) return false;
 
     form.hidden = true;
-    if (saveBar) saveBar.hidden = true;
+    hideSaveBar();
     done.hidden = false;
     done.innerHTML =
       '<h2 class="h-md">Checkout preview</h2>' +
@@ -803,7 +1189,10 @@
         if (!res.ok) throw new Error(res.body.error || 'pay_intent_failed');
         if (res.body.paid) return showPaid();
 
-        var stripe = window.Stripe(body.publishable_key);
+        /* /pay-intent returns the publishable key as well, so a panel that did
+           not come from a submit response — a saved edit that still owes the
+           fee — can mount the card field without being handed one. */
+        var stripe = window.Stripe(res.body.publishable_key || body.publishable_key);
         var elements = stripe.elements({
           clientSecret: res.body.client_secret,
           appearance: {
@@ -882,6 +1271,136 @@
     if (window.gtag) gtag('event', 'application_paid');
   }
 
+  /* ------------------------------------------------------ email my link --- */
+
+  /* Where the link goes is not this page's choice: the Worker mails the address
+     stored on the application and ignores anything we send with the request.
+     That is deliberate — the link is a bearer credential for the whole
+     application, so a page that could name the recipient would be a way to post
+     one team's application to an address they never chose. Hence no "send it
+     somewhere else" field here, and copy that promises the address on the
+     application rather than one we could offer to change. */
+  function emailMyLink() {
+    var typed = (form.elements.contact_email.value || '').trim();
+
+    /* Nowhere to send it yet. The Worker says so too, but in a sentence the
+       applicant would have to go looking for; say it at the field instead. */
+    if (!typed) {
+      clearErrors();
+      fieldError('contact_email', 'Add your email address first — that’s where the link goes.');
+      var box = form.elements.contact_email;
+      if (box) { box.focus(); box.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+      return Promise.reject(new Error('no_email'));
+    }
+
+    /* A draft is saved first, so the address the Worker mails is the one on the
+       screen. An edit is not: saving is the applicant's own button to press, and
+       saving a paid application raises an email to the organisers — asking for
+       a link should do neither. Which also means an edit's link goes to the
+       address the application already holds, so the confirmation says exactly
+       that rather than naming the typed one. */
+    var saved = !state.editing;
+
+    return (saved ? pushDraft() : Promise.resolve(state))
+      .then(function () {
+        return fetch(api('/email-link'), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: state.id, token: state.token })
+        });
+      })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); })
+      .then(function (res) {
+        if (!res.ok) throw new Error(res.body.error || 'email_failed');
+        return { emailed: !!res.body.emailed, to: saved ? typed : null };
+      });
+  }
+
+  /* In the save bar, which is sticky: losing the link is the one problem an
+     applicant cannot solve from inside the form, so the fix cannot be two
+     clicks deep inside another panel. */
+  /* ---------------------------------------------------------- recovery --- */
+
+  /* For an applicant with no link at all. POST /recover answers an identical
+     200 whether or not the address has an application, so that someone cannot
+     use this to discover who applied — which means this UI must never say
+     "found" or "not found" either. The hedged copy below is the whole point;
+     do not "improve" it into a confirmation.
+
+     Recovery mints a fresh token, so any older link stops working. That is
+     unavoidable: only the hash is stored, so the previous link cannot be
+     reproduced. */
+  (function recovery() {
+    var toggle = $('recover-toggle'), box = $('recover-form');
+    var field = $('recover-email'), send = $('recover-send'), status = $('recover-status');
+    if (!toggle || !box) return;
+
+    toggle.addEventListener('click', function () {
+      box.hidden = !box.hidden;
+      if (!box.hidden) field.focus();
+    });
+
+    send.addEventListener('click', function () {
+      var email = String(field.value || '').trim();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        status.textContent = 'That email address does not look right.';
+        field.focus();
+        return;
+      }
+
+      send.disabled = true;
+      status.textContent = 'Sending…';
+
+      fetch(api('/recover'), {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: email })
+      }).then(function (r) {
+        return r.json().catch(function () { return {}; }).then(function (d) {
+          return { status: r.status, body: d };
+        });
+      }).then(function (res) {
+        if (res.status === 200) {
+          /* Deliberately hedged: a definite "we sent it" would confirm the
+             address has an application. */
+          box.innerHTML =
+            '<p>If that address has an application in progress, we\u2019ve emailed the ' +
+            'link to it. Check your inbox \u2014 and your spam folder. The newest email ' +
+            'always has the working link; older ones stop working.</p>';
+          return;
+        }
+        status.textContent = res.body && res.body.error
+          ? res.body.error
+          : 'We could not do that right now. Please try again shortly.';
+        send.disabled = false;
+      }).catch(function () {
+        status.textContent = 'We could not reach the server. Please try again shortly.';
+        send.disabled = false;
+      });
+    });
+  })();
+
+  $('email-link-bar').addEventListener('click', function () {
+    var btn = $('email-link-bar');
+    btn.disabled = true;
+    setStatus('Sending your link…', 'saving');
+
+    emailMyLink()
+      .then(function (r) {
+        btn.disabled = false;
+        setStatus(r.emailed
+          ? 'Link sent to ' + (r.to || 'the email address on your application')
+          : 'We couldn’t send that email — copy the link from your address bar instead',
+        r.emailed ? 'saved' : 'error');
+      })
+      .catch(function (err) {
+        btn.disabled = false;
+        setStatus(String(err.message) === 'no_email'
+          ? 'Add your email address and try again'
+          : 'We couldn’t send that email just now — please try again in a moment', 'error');
+      });
+  });
+
   /* --------------------------------------------------- save for later --- */
 
   var sheet = document.createElement('dialog');
@@ -895,8 +1414,7 @@
 
     pushDraft()
       .then(function () {
-        var link = location.origin + location.pathname +
-          '?id=' + encodeURIComponent(state.id) + '&t=' + encodeURIComponent(state.token);
+        var link = resumeUrl();
 
         sheet.innerHTML =
           '<h2 class="h-sm">Saved</h2>' +
@@ -924,15 +1442,12 @@
             var btn = $('email-link');
             btn.disabled = true;
             btn.textContent = 'Sending…';
-            fetch(api('/email-link'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: state.id, token: state.token, email: email })
-            })
-              .then(function (r) { return r.json(); })
-              .then(function (d) {
-                $('mail-note').innerHTML = d.emailed
-                  ? 'Sent to <strong>' + esc(email) + '</strong>. Check your spam folder if it doesn’t arrive.'
+            // The same action as the one in the save bar, and the same rule
+            // about where it goes: the Worker picks the address, not this page.
+            emailMyLink()
+              .then(function (r) {
+                $('mail-note').innerHTML = r.emailed
+                  ? 'Sent to <strong>' + esc(r.to || email) + '</strong>. Check your spam folder if it doesn’t arrive.'
                   : 'We couldn’t send that email — please copy the link above instead.';
                 btn.remove();
               })
@@ -977,7 +1492,9 @@
   form.addEventListener('change', touch);
 
   window.addEventListener('beforeunload', function (e) {
-    if (state.dirty && state.id && !state.submitted) {
+    /* An edit is never autosaved, so unsaved work is exactly the case to warn
+       about even though the application itself is already submitted. */
+    if (state.dirty && state.id && (!state.submitted || state.editing)) {
       e.preventDefault();
       e.returnValue = '';
     }
@@ -1023,36 +1540,17 @@
         state.id = d.id;
         state.token = keys.token;
 
+        /* Submitted is no longer the end of the road: the form reopens with
+           their answers in it so a typo does not need an email to fix. */
         if (d.status === 'submitted') {
-          // Deliberately don't remember a finished application: otherwise a
-          // later visit to /apply/ on this browser would show this panel
-          // instead of a blank form, and a second team couldn't apply.
-          try { localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_KEYS); } catch (err) {}
-          state.submitted = true;
-          form.hidden = true;
-          saveBar.hidden = true;
-          done.hidden = false;
-          done.innerHTML =
-            '<h2 class="h-md">This application is already in</h2>' +
-            '<p>We received it on ' + esc(new Date(d.submitted_at).toLocaleDateString()) + '. ' +
-            'Your reference is <span class="ref">' + esc(d.id) + '</span>.</p>' +
-            // The fee URL lives in the Worker's settings and only comes back
-            // with a submit response, so this panel has none to offer — send
-            // them to a person rather than to last year's checkout.
-            '<p>If you still need to pay the application fee, email ' +
-            '<a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> with your ' +
-            'reference and we’ll send you the payment link.</p>' +
-            '<p>Something wrong? Same address — quote your reference.</p>' +
-            '<p><a href="' + esc(location.pathname) + '">Apply with a different team</a></p>';
+          openForEditing(d, keys);
           return;
         }
 
         writeLocal(LS_KEYS, keys);
         fill(d.data);
         writeLocal(LS_DATA, d.data);
-        if (d.photo) {
-          showPhoto(d.photo.name, api('/photo?id=' + encodeURIComponent(d.id) + '&token=' + encodeURIComponent(keys.token)));
-        }
+        if (d.photo) showStoredPhoto(d, keys.token);
         setStatus('Picked up where you left off', 'saved');
       })
       .catch(function () {

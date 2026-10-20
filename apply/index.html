@@ -116,6 +116,12 @@
            JS has confirmed it can actually reach the backend. -->
       <div class="save-bar" id="save-bar" hidden>
         <span class="save-status" id="save-status" role="status" aria-live="polite">Not saved yet</span>
+        <!-- The resume link is the only way back into an application from
+             another device, so asking for it again sits in the sticky bar
+             rather than inside the "Save & finish later" panel. It always goes
+             to the email address on the application - the Worker ignores any
+             address this page sends - so there is nothing to type here. -->
+        <button type="button" class="text-btn" id="email-link-bar">Email me my link</button>
         <button type="button" class="btn btn--yellow save-later" id="save-later"><span>Save &amp; finish later</span></button>
       </div>
 
@@ -294,6 +300,11 @@
 
         <fieldset class="field-group">
           <legend class="h-sm">Application fee</legend>
+          <!-- Unhidden by apply.js when someone who has already paid comes back
+               to change an answer: the agreement still has to be ticked, but it
+               must not read as a fee they are about to be charged a second
+               time. -->
+          <p class="help" id="fee-paid-note" hidden>Your application fee is already paid. This is the agreement you made when you first applied &mdash; leave it ticked.</p>
           <div class="field">
             <label class="check check--agree">
               <input type="checkbox" name="agree" id="agree" required>
@@ -313,10 +324,27 @@
       <!-- Sits outside the form so it is still on the page when the form is
            swapped out for the confirmation, and still there if the submit
            itself is what failed. -->
+      <!-- For someone who has no link at all: the sticky bar's "Email me my
+           link" needs an open application, this does not. The Worker answers
+           identically whether or not the address has one, so this panel must
+           never claim an application was found. -->
+      <div class="recover-box">
+        <p class="recover-intro">Started an application on another device and lost the link?
+          <button type="button" class="text-btn" id="recover-toggle">Email it to me</button>
+        </p>
+        <div class="recover-form" id="recover-form" hidden>
+          <label class="visually-hidden" for="recover-email">Your email address</label>
+          <input type="email" id="recover-email" placeholder="the email you applied with" autocomplete="email">
+          <button type="button" class="btn btn--yellow" id="recover-send"><span>Send my link</span></button>
+          <p class="recover-status" id="recover-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+
       <p class="apply-help-out">Having issues submitting this form? Email
         <a href="mailto:admin@dcsketchfest.com?subject=Trouble%20submitting%20my%20DC%20Sketchfest%20application">admin@dcsketchfest.com</a>.</p>
 
-      <!-- Swapped in for the form once the application is submitted. -->
+      <!-- Swapped in for the form once the application is submitted, and again
+           when a change to an application that was already in is saved. -->
       <div id="done" class="done" hidden></div>
 
     </div>

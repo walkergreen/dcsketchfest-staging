@@ -264,6 +264,77 @@ body.apply-page { overflow-x: clip; }
   background: var(--yellow);
 }
 
+/* ------------------------------------------------------ fee breakdown --- */
+/* The itemised price: application fee, tax, service fee, total. Rendered only
+   when Settings actually carries a tax rate or a service fee, so on the default
+   configuration none of this is on the page.
+
+   Deliberately the same inset panel the guidelines block uses — paper on a 2px
+   ink rule, 10px radius — rather than a second card style nested inside the
+   white field-group card. */
+
+#fee-breakdown[hidden] { display: none; }
+
+.fee-rows {
+  margin: 0 0 .6rem;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+  padding: .2rem .9rem;
+}
+
+.fee-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .75rem;
+  padding: .55rem 0;
+}
+
+.fee-row + .fee-row { border-top: 1px solid rgba(33, 27, 58, .15); }
+
+.fee-row dt { font-weight: 500; }
+
+.fee-row dd {
+  margin: 0;
+  font-weight: 700;
+  /* Digits of one width, so the amounts stack into a column even though the
+     labels beside them are all different lengths. */
+  font-variant-numeric: tabular-nums;
+  /* At 375px the label wraps and the amount must not: a price broken across
+     two lines is the one thing on this panel that has to stay readable. */
+  white-space: nowrap;
+}
+
+/* The line that matters. Specificity has to beat `.fee-row + .fee-row` above,
+   hence the sibling selector rather than a bare class. */
+.fee-row + .fee-row--total { border-top: 2px solid var(--ink); }
+.fee-row--total { font-size: 1.05rem; }
+.fee-row--total dt { font-weight: 700; }
+
+.fee-note { margin-bottom: 0; }
+
+/* Under the deadline list, where the per-window prices are the base fee only. */
+.fee-extras-note[hidden] { display: none; }
+
+.fee-extras-note {
+  margin: .6rem 0 0;
+  font-size: .9rem;
+  line-height: 1.45;
+  font-weight: 600;
+}
+
+/* The submitted and saved-change panels centre their text; the breakdown reads
+   as a column of figures and has to stay left-aligned inside them. */
+.done .fee-rows {
+  text-align: left;
+  max-width: 26rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.done .fee-note { max-width: 26rem; }
+
 /* ----------------------------------------------------------- dropzone --- */
 
 .dropzone {

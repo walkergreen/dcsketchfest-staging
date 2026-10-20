@@ -98,6 +98,12 @@
             <p>Late Application ($40) &ndash; November 30 to December 13.</p>
             <p><strong>Applications close December 13, 11:59 PM ET.</strong></p>
           </div>
+          <!-- Written by apply.js only when Settings carries a tax rate or a
+               service fee: the prices above are the application fee on its own,
+               and someone who reads "$25" here and meets $27.61 at the card step
+               has been quoted the wrong number. Empty by default, so with both
+               off this panel is exactly the four lines above it. -->
+          <p class="fee-extras-note" id="fee-extras-note" hidden></p>
         </div>
 
         <div class="apply-note">
@@ -305,10 +311,18 @@
                must not read as a fee they are about to be charged a second
                time. -->
           <p class="help" id="fee-paid-note" hidden>Your application fee is already paid. This is the agreement you made when you first applied &mdash; leave it ticked.</p>
+
+          <!-- The itemised price, filled from GET /apply/fee. The Worker is the
+               only thing that computes money; this renders what it reports and
+               hard-codes no amount. Hidden unless there is a tax or service-fee
+               line to itemise, because with neither set the agreement below
+               already states the one number in full. -->
+          <div id="fee-breakdown" hidden></div>
+
           <div class="field">
             <label class="check check--agree">
               <input type="checkbox" name="agree" id="agree" required>
-              <span>Upon submitting this form, I will pay the DC Sketchfest Application fee. My application is incomplete without payment. All sales are final and non-refundable. Payment does not guarantee entry. I am submitting SKETCH comedy, not improv or stand-up. <span class="req">*</span></span>
+              <span>Upon submitting this form, I will pay the DC Sketchfest Application fee<span id="agree-total"></span>. My application is incomplete without payment. All sales are final and non-refundable. Payment does not guarantee entry. I am submitting SKETCH comedy, not improv or stand-up. <span class="req">*</span></span>
             </label>
           </div>
         </fieldset>

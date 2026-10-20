@@ -30,7 +30,12 @@
 
     /* Three fee windows this year rather than two fixed deadlines, so the
        page renders this list instead of one line per tier. The Worker's /fee
-       endpoint is what actually sets the fee — these have to agree with it. */
+       endpoint is what actually sets the fee — these have to agree with it.
+
+       These are the BASE fee per window. Tax and the service fee are added on
+       top by the Worker, and /fee only reports the window that is open now, so
+       the other two windows cannot be totalled here — renderFee() annotates
+       this list with the real total instead of restating it per line. */
     deadlines: [
       'Early Application ($25) – October 20 to November 1.',
       'Standard Application ($30) – November 1 to November 29.',
@@ -607,8 +612,100 @@
       });
   });
 
+  /* ------------------------------------------------------------ money --- */
+
+  /* A lone amount, formatted the way this page has always formatted one: $25,
+     not $25.00. Still right when the fee is a single number. */
   function money(cents) {
     return '$' + (cents / 100).toFixed(2).replace(/\.00$/, '');
+  }
+
+  /* Two decimals, always. Itemised rows have to line up under one another, and
+     beside "$1.50" a bare "$28" reads as a different kind of number. */
+  function money2(cents) {
+    return '$' + (cents / 100).toFixed(2);
+  }
+
+  /* The fee as the WORKER reported it. /fee, /submit, /pay-intent and
+     /preview-intent all name these same keys, so one reader serves all four.
+
+     Nothing on this page computes a price. The gross-up that sizes the service
+     fee so Stripe's cut comes out of it lives in the Worker; a second copy here
+     would be a second answer to what the card is charged, and the one that is
+     wrong would be the one the applicant reads.
+
+     `amount_cents` is the fallback because it is the total on every one of
+     those responses: an older Worker that sends only that renders as a single
+     number, which is what this page showed before there was tax or a service
+     fee to itemise. */
+  function feeFrom(d) {
+    if (!d) return null;
+    var total = d.total_cents != null ? d.total_cents : d.amount_cents;
+    if (total == null) return null;
+    var tax = d.tax_cents || 0;
+    var service = d.service_cents || 0;
+    return {
+      base_cents: d.base_cents != null ? d.base_cents : total,
+      tax_cents: tax,
+      service_cents: service,
+      total_cents: total,
+      tax_label: d.tax_label || 'Tax',
+      service_label: d.service_label || 'Card processing fee',
+      /* Whether there is anything to break the total DOWN into. Both off is the
+         default, and then every screen shows the one number it always did. */
+      itemised: tax > 0 || service > 0
+    };
+  }
+
+  /* ONE FLAT TAX RATE FOR EVERYONE, BY DESIGN — and this page is where that
+     decision is visible, so it is written down here too. The form asks for no
+     billing address (see FIELDS), so there is no jurisdiction to compute from:
+     `tax_label` is a fixed sentence an admin wrote, not a rate derived from who
+     is paying. That is right while the fee is treated as DC-sourced — a slot in
+     a DC festival — and wrong the moment it has to follow each applicant's own
+     location. Making it per-jurisdiction starts HERE, with an address question
+     and the consent and validation that come with one, then a rate table or
+     Stripe Tax behind it in the Worker. Do not add an address field for any
+     smaller reason, and do not try to vary the label client-side. */
+
+  /* For a headline or a button: cents only when cents are in play. */
+  function feeAmount(fee) {
+    if (!fee) return '';
+    return fee.itemised ? money2(fee.total_cents) : money(fee.total_cents);
+  }
+
+  function extraLabels(fee) {
+    var out = [];
+    if (fee.tax_cents > 0) out.push(fee.tax_label);
+    if (fee.service_cents > 0) out.push(fee.service_label);
+    return out;
+  }
+
+  function andList(items) {
+    if (items.length < 2) return items[0] || '';
+    return items.slice(0, -1).join(', ') + ' and ' + items[items.length - 1];
+  }
+
+  /* The breakdown. Cheapest line first, in the same order and under the same
+     labels as the emailed receipt (feeLines in the Worker), so the screen and
+     the receipt cannot quote the applicant two different stories.
+
+     Returns '' when nothing is added on top of the base fee — that is what
+     keeps the default page free of a one-row table. */
+  function feeTable(fee) {
+    if (!fee || !fee.itemised) return '';
+
+    var row = function (label, cents, cls) {
+      return '<div class="fee-row' + (cls || '') + '">' +
+        '<dt>' + esc(label) + '</dt><dd>' + money2(cents) + '</dd></div>';
+    };
+
+    return '<dl class="fee-rows">' +
+      row('Application fee', fee.base_cents) +
+      (fee.tax_cents > 0 ? row(fee.tax_label, fee.tax_cents) : '') +
+      (fee.service_cents > 0 ? row(fee.service_label, fee.service_cents) : '') +
+      row('Total charged to your card', fee.total_cents, ' fee-row--total') +
+      '</dl>';
   }
 
   function showSubmitted(body, data) {
@@ -624,23 +721,27 @@
       '</p>';
 
     var inForm = body.payments_mode === 'stripe' && body.publishable_key;
+    var fee = feeFrom(body);
 
     done.innerHTML =
       '<h2 class="h-md">Application received</h2>' +
       '<p><strong>You’re not done yet.</strong> Your application is incomplete until you pay the application fee' +
-      (body.amount_cents ? ' of <strong>' + money(body.amount_cents) + '</strong>' : '') + '.</p>' +
+      (fee ? ' of <strong>' + feeAmount(fee) + '</strong>' : '') + '.</p>' +
       // Repeated here deliberately: this is the last screen before money
       // changes hands, so the provisional terms must be in front of them.
       (body.grace && body.grace_warning
         ? '<p class="apply-banner apply-banner--warn"><strong>Past the deadline.</strong> ' +
           esc(body.grace_warning) + '</p>'
         : '') +
+      // Directly above the card field: the last place the price can still be a
+      // surprise is the moment the card number goes in.
+      feeTable(fee) +
       (inForm
         ? '<div id="pay-wrap">' +
             '<div id="payment-element"></div>' +
             '<p class="pay-error" id="pay-error" hidden></p>' +
             '<button type="button" class="btn btn--purple" id="pay-btn"><span>Pay ' +
-              (body.amount_cents ? money(body.amount_cents) : 'the application fee') + '</span></button>' +
+              (fee ? feeAmount(fee) : 'the application fee') + '</span></button>' +
           '</div>'
         : '<p><a class="btn btn--purple" href="' + esc(body.payUrl) + '"><span>Pay the application fee</span></a></p>') +
       '<p>All sales are final and non-refundable. Payment does not guarantee entry. ' + esc(CONFIG.notification) + '</p>' +
@@ -722,6 +823,9 @@
          shown a fee or a pay button for changing an answer. */
       if (state.paid === true && $('fee-paid-note')) $('fee-paid-note').hidden = false;
       renderNotice();
+      // The answer to "has this been paid?" is what decides whether the price
+      // belongs on screen at all, so the breakdown is redrawn once it lands.
+      renderFee();
     });
   }
 
@@ -772,22 +876,23 @@
        field is mounted — /pay-intent answers `paid: true` for anyone who has
        already paid, so an unknown state corrects itself on this screen rather
        than chasing someone for money they have already sent. */
-    var amount = notice.amount_cents;
+    var fee = notice.fee;
     var inForm = notice.mode === 'stripe';
 
     done.innerHTML = updated +
       (state.paid === false
         ? '<p><strong>You’re not done yet.</strong> Your application is incomplete until you ' +
           'pay the application fee' +
-          (amount ? ' of <strong>' + money(amount) + '</strong>' : '') + '.</p>'
+          (fee ? ' of <strong>' + feeAmount(fee) + '</strong>' : '') + '.</p>'
         : '<p>If you have not paid the application fee yet, your application is incomplete ' +
           'until you do.</p>') +
+      feeTable(fee) +
       (inForm
         ? '<div id="pay-wrap">' +
             '<div id="payment-element"></div>' +
             '<p class="pay-error" id="pay-error" hidden></p>' +
             '<button type="button" class="btn btn--purple" id="pay-btn"><span>Pay ' +
-              (amount ? money(amount) : 'the application fee') + '</span></button>' +
+              (fee ? feeAmount(fee) : 'the application fee') + '</span></button>' +
           '</div>'
         /* The fee URL lives in the Worker's settings and only comes back with a
            submit response, so this panel has none to offer — send them to a
@@ -870,7 +975,7 @@
      banner under the first. */
   var notice = {
     known: false, open: true, grace: false, warning: '',
-    mode: '', amount_cents: null, el: null
+    mode: '', fee: null, el: null
   };
 
   /* Ask the Worker what the fee is right now. Someone arriving in the grace
@@ -888,10 +993,11 @@
         notice.warning = d.warning || '';
         /* Kept for the panel a saved edit lands on: an unpaid application still
            owes the fee, and that panel has no submit response to learn the
-           amount or the payment mode from. */
+           breakdown or the payment mode from. */
         notice.mode = d.payments_mode || '';
-        notice.amount_cents = d.amount_cents || null;
+        notice.fee = feeFrom(d);
         renderNotice();
+        renderFee();
       })
       .catch(function () { /* never block the form on this */ });
   }
@@ -942,6 +1048,64 @@
 
     if (notice.el) { notice.el.remove(); notice.el = null; }
     if (html) notice.el = banner(cls, html);
+  }
+
+  /* ------------------------------------------------- the price on screen --- */
+
+  /* Put the real total in front of the applicant before they commit to it.
+     Someone who reads "$25" in the deadlines panel, ticks an agreement that
+     says only "the application fee" and then meets $27.61 at the card step
+     either abandons or calls it a surprise charge afterwards. So the itemised
+     number goes beside the agreement they tick, not only on the receipt.
+
+     Every branch here is a no-op when neither tax nor a service fee is set: the
+     three elements stay empty and hidden, and the page reads exactly as it did
+     before any of this existed. */
+  function renderFee() {
+    var fee = notice.fee;
+    var box = $('fee-breakdown');
+    var agreeTotal = $('agree-total');
+    var note = $('fee-extras-note');
+
+    /* Never shown to someone who has already paid — the rule for every screen
+       after payment is that correcting an answer is not priced. Nor before /fee
+       has answered, nor once it reports applications closed: there is no fee to
+       quote in either case. */
+    var show = !!fee && fee.itemised && notice.open && state.paid !== true;
+    var labels = show ? extraLabels(fee) : [];
+
+    if (box) {
+      box.innerHTML = show
+        ? feeTable(fee) +
+          '<p class="help fee-note">This is the full amount your card will be ' +
+          'charged. ' + esc(andList(labels)) + (labels.length > 1 ? ' are' : ' is') +
+          ' added to the application fee at checkout.</p>'
+        : '';
+      box.hidden = !show;
+    }
+
+    /* The agreement names the number. "I will pay the application fee" is not
+       consent to a larger charge, and consent is the thing a chargeback turns
+       on. */
+    if (agreeTotal) {
+      agreeTotal.innerHTML = show
+        ? ' of <strong>' + money2(fee.total_cents) + '</strong> (including ' +
+          esc(andList(labels)) + ')'
+        : '';
+    }
+
+    /* The deadlines panel lists a base fee per window, and /fee reports only
+       the window that is open now, so the other two cannot be totalled without
+       a second copy of the gross-up. Say what those prices are instead, and
+       give the real total for today. */
+    if (note) {
+      note.innerHTML = show
+        ? 'Those prices are the application fee itself. With ' +
+          esc(andList(labels)) + ' added, an application started today comes to ' +
+          '<strong>' + money2(fee.total_cents) + '</strong>.'
+        : '';
+      note.hidden = !show;
+    }
   }
 
   /* ------------------------------------------------------ admin bypass --- */
@@ -1112,8 +1276,14 @@
             'Switch to test keys (<code>pk_test_…</code>) before trying a payment.');
         }
 
+        /* The preview is meant to be the applicant's checkout exactly, so it
+           gets the same itemised breakdown above the same card field. */
+        var fee = feeFrom(b);
+        var table = feeTable(fee);
+        if (table) $('pay-wrap').insertAdjacentHTML('afterbegin', table);
+
         var payBtn = $('pay-btn');
-        payBtn.querySelector('span').textContent = 'Pay ' + money(b.amount_cents) +
+        payBtn.querySelector('span').textContent = 'Pay ' + feeAmount(fee) +
           (b.tier ? ' (' + b.tier + ')' : '');
 
         var stripe = window.Stripe(b.publishable_key);

@@ -80,8 +80,11 @@
     { name: 'show_description', label: 'Show Description', required: true },
     { name: 'dates', label: 'Show dates you are available', required: true, type: 'list' },
     { name: 'tech_level', label: 'Tech requirements of your show', required: true },
-    { name: 'stage_reqs', label: 'Stage requirements' },
+    /* Order matters beyond bookkeeping: validate() sorts the problem summary by
+       this list so it reads as a route down the page. Keep it in step with the
+       markup -- tech before stage. */
     { name: 'tech_reqs', label: 'Tech requirements' },
+    { name: 'stage_reqs', label: 'Stage requirements' },
     { name: 'accessibility', label: 'Accessibility requirements' },
     { name: 'representation', label: 'Representation', type: 'list' },
     { name: 'representation_other', label: 'Representation (other)' },

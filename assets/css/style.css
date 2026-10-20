@@ -1680,6 +1680,38 @@ h5 {
   padding: 2rem;
 }
 
+/* The 404 is a bit, so it needs more than a centred heading. These went
+   out with the old stylesheet when production was brought up to the 2027
+   site; the page that uses them is older than the merge. */
+.error-inner {
+  max-width: 44rem;
+}
+.error-slate {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: .9rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--yellow);
+  margin: 0 0 1rem;
+}
+.error-punchline {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  line-height: 1.5;
+  color: var(--paper);
+  margin: 1.25rem auto 0;
+  max-width: 30rem;
+}
+.error-mumbie {
+  width: min(13rem, 45vw);
+  height: auto;
+  margin: 2rem auto 2.5rem;
+  transform: rotate(-6deg);
+}
+
+
 /* ------------------------------------------------------- scroll reveal --- */
 
 .reveal {

@@ -102,7 +102,7 @@ PAGE = """<!DOCTYPE html>
 {years}
       </nav>
 
-      <p class="archive-note">DC Sketchfest returns March 31&ndash;April 3, 2027 &mdash; four nights of sketch, venue to be announced. <a href="/apply/">Applications are open</a> through December 13.</p>
+      <p class="archive-note">DC Sketchfest returns March 31&ndash;April 3, 2027 &mdash; four nights of sketch comedy, venue to be announced. <a href="/apply/">Applications are open</a> through December 13.</p>
     </div>
   </div>
 </section>

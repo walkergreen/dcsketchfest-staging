@@ -533,8 +533,13 @@ h5 {
 
 /* ------------------------------------------------------------- ticker --- */
 
-/* Marquee strip under the hero. The track holds two identical spans so the
-   -50% translate loops seamlessly. */
+/* Marquee strip under the hero.
+ *
+ * The track holds SIX identical spans and translates -50%, so the first three
+ * land exactly where the second three began. Six rather than two because the
+ * loop is only seamless while half the track is at least as wide as the
+ * viewport: with two spans that half was one span, about 1200px, and any
+ * window wider than that ran past the end of the track and showed a gap. */
 .ticker {
   background: var(--yellow);
   border-top: var(--border);

@@ -551,7 +551,11 @@ h5 {
 .ticker-track {
   display: flex;
   width: max-content;
-  animation: ticker-scroll 28s linear infinite;
+  /* 84s, not 28s: the duration is the time to cross HALF the track, and
+     half the track went from one span to three when the span count went
+     from two to six to close the gap. Keeping 28s tripled the speed as a
+     side effect of that fix. 84s is the same ~52px/s it always ran at. */
+  animation: ticker-scroll 84s linear infinite;
 }
 
 .ticker-track > span {

@@ -311,13 +311,34 @@
         state.dirty = JSON.stringify(collect()) !== sent;
         // See touch(): a submitted application is never left on this device.
         if (!state.editing) writeLocal(LS_KEYS, { id: d.id, token: d.token });
+        /* A refusal must not outlive the thing it described: the hour's
+           window rolls over, and an admin can reopen applications. */
+        if (state.refusalShown) {
+          state.refusalShown = false;
+          errorBox.hidden = true;
+          errorBox.innerHTML = '';
+        }
         setStatus(state.editing ? 'Change saved' : 'Saved — you can finish later', 'saved');
         return state;
       })
       .catch(function (err) {
-        setStatus(state.editing
-          ? 'Couldn’t save that change — your answers are still on this screen'
-          : 'Couldn’t reach the server — saved on this device only', 'error');
+        /* Two refusals carry advice worth repeating verbatim: applications
+           being closed (403), and this network having used up its hour's worth
+           of new applications (429) — the limiter that exists for a green room
+           all applying over one wifi NAT. "Couldn't reach the server, try again
+           in a minute" is wrong for both: nothing is unreachable and retrying
+           cannot help. Deliberately NOT 404 (a rotated token, handled above as
+           linkReplaced) and NOT 5xx, whose text is a raw runtime string. */
+        if (err.status === 403 || err.status === 429) {
+          state.refusalShown = true;
+          errorBox.hidden = false;
+          errorBox.textContent = String(err.message);
+          setStatus('Not saved', 'error');
+        } else {
+          setStatus(state.editing
+            ? 'Couldn’t save that change — your answers are still on this screen'
+            : 'Couldn’t reach the server — saved on this device only', 'error');
+        }
         throw err;
       })
       .then(
@@ -457,7 +478,8 @@
           ? String(err.message)
           : err.status === 413 || String(err.message) === 'too_large' ||
             String(err.message) === 'too_large_no_r2'
-            ? 'that photo is too big — try one under 10 MB'
+            ? 'that photo was too large to store — if it came off an iPhone, '
+              + 'save or export it as a JPEG and try again'
             : 'the upload didn’t go through — check your connection and try again';
         setStatus('Photo not saved: ' + why, 'error');
         /* A failed replacement must not look like the photo is gone: the
@@ -546,6 +568,29 @@
     return f ? f.label : name;
   }
 
+  /* Shared by local validation and by the Worker's own refusal, so the two
+     read identically. The caller clears first: both call sites sit inside the
+     one submit handler, after clearErrors(). */
+  function showProblems(problems) {
+    problems.forEach(function (p) { fieldError(p.name, p.message); });
+    errorBox.hidden = false;
+    errorBox.innerHTML = 'Almost there — a few things still need filling in:<ul>' +
+      problems.map(function (p) { return '<li>' + esc(label(p.name)) + '</li>'; }).join('') + '</ul>';
+    errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  /* The Worker validates the STORED row, so it can refuse an answer that is
+     filled in on screen but never reached the server — a save that failed, or
+     a field added after this draft was created. Naming the questions it is
+     unhappy about beats "check the highlighted questions" when nothing is
+     highlighted, which is what the old copy did: it pointed at marks that the
+     discarded `missing` array was the only way to produce. */
+  function problemsFromServer(missing) {
+    return (missing || [])
+      .filter(function (n) { return typeof n === 'string'; })
+      .map(function (n) { return { name: n, message: 'We still need this one.' }; });
+  }
+
   /* ----------------------------------------------------------- submit --- */
 
   form.addEventListener('submit', function (e) {
@@ -558,11 +603,7 @@
     var problems = validate(data);
 
     if (problems.length) {
-      problems.forEach(function (p) { fieldError(p.name, p.message); });
-      errorBox.hidden = false;
-      errorBox.innerHTML = 'Almost there — a few things still need filling in:<ul>' +
-        problems.map(function (p) { return '<li>' + esc(label(p.name)) + '</li>'; }).join('') + '</ul>';
-      errorBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showProblems(problems);
       return;
     }
 
@@ -596,7 +637,11 @@
       })
       .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, body: d }; }); })
       .then(function (res) {
-        if (!res.ok) throw new Error(res.body.error || 'submit_failed');
+        if (!res.ok) {
+          var e = new Error(res.body.error || 'submit_failed');
+          e.missing = res.body.missing;
+          throw e;
+        }
         state.submitted = true;
         try { localStorage.removeItem(LS_DATA); localStorage.removeItem(LS_KEYS); } catch (err) {}
         showSubmitted(res.body, data);
@@ -604,6 +649,13 @@
       .catch(function (err) {
         button.disabled = false;
         button.querySelector('span').textContent = 'Submit and pay';
+        var serverProblems = String(err.message) === 'incomplete'
+          ? problemsFromServer(err.missing)
+          : [];
+        if (serverProblems.length) {
+          showProblems(serverProblems);
+          return;
+        }
         errorBox.hidden = false;
         errorBox.textContent = String(err.message) === 'incomplete'
           ? 'Some required answers are still missing — scroll up and check the highlighted questions.'

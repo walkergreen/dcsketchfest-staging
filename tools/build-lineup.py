@@ -80,6 +80,7 @@ PAGE = """<!DOCTYPE html>
         <a class="nav-link" href="/performers-{newest}/" aria-current="page">Past Lineups</a>
         <a class="nav-link" href="/#faq-section">FAQ</a>
         <a class="nav-link" href="mailto:admin@dcsketchfest.com?subject=Question">Contact</a>
+        <a class="nav-link nav-donate-mobile" href="https://givebutter.com/dcsketchfest2027">Donate</a>
       </nav>
 
       <a class="btn nav-donate-desktop" href="https://givebutter.com/dcsketchfest2027"><span>Donate</span></a>

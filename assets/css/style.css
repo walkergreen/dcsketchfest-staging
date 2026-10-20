@@ -373,9 +373,16 @@ h5 {
 
 .nav-donate-desktop { flex: none; }
 
+/* Donate appears twice in the markup and never twice on screen: the
+   header button is display:none below 992px, where the only nav a
+   visitor can reach is the drawer, and the drawer entry is hidden
+   above it. One of the two is always the one that is reachable. */
+.nav-donate-mobile { display: none; }
+
 @media (max-width: 991px) {
   .nav-toggle { display: flex; }
   .nav-donate-desktop { display: none; }
+  .nav-donate-mobile { display: block; }
 
   .nav-links {
     position: absolute;

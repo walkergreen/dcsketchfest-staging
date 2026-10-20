@@ -716,7 +716,11 @@
     var reference =
       '<p>Your reference is <span class="ref">' + esc(state.id) + '</span>. ' +
       (body.emailed
-        ? 'A copy of your answers is on its way to ' + esc(data.contact_email) + '.'
+        ? 'A copy of your answers is on its way to ' +
+          esc(body.emailed_to || data.contact_email) + '.' +
+          (body.emailed_to && body.emailed_to !== data.contact_email
+            ? ' That is the address this application was started with; email us if it is wrong.'
+            : '')
         : 'Please save this reference — quote it if you email us about your application.') +
       '</p>';
 
@@ -743,7 +747,11 @@
             '<button type="button" class="btn btn--purple" id="pay-btn"><span>Pay ' +
               (fee ? feeAmount(fee) : 'the application fee') + '</span></button>' +
           '</div>'
-        : '<p><a class="btn btn--purple" href="' + esc(body.payUrl) + '"><span>Pay the application fee</span></a></p>') +
+        : body.payUrl
+          ? '<p><a class="btn btn--purple" href="' + esc(body.payUrl) + '"><span>Pay the application fee</span></a></p>'
+          : '<p class="apply-banner apply-banner--warn">We could not open the payment step. ' +
+            'Your application is saved under the reference below — email ' +
+            '<a href="mailto:admin@dcsketchfest.com">admin@dcsketchfest.com</a> and we will send you a payment link.</p>') +
       '<p>All sales are final and non-refundable. Payment does not guarantee entry. ' + esc(CONFIG.notification) + '</p>' +
       reference;
 
@@ -1192,10 +1200,28 @@
      staging and localhost. On dcsketchfest.com it never renders, so the real
      form stays clean — `?fill=1` still works everywhere for anyone who knows
      to type it. */
-  var STAGING_HOSTS = /^(staging\.dcsketchfest\.com|localhost|127\.0\.0\.1|.*\.local)$/i;
+  /* staging.dcsketchfest.com is NOT a safe host to key a dev toolbar on any
+     more: it is the host real applicants are being sent to, and it was showing
+     them "Fill with test data" and "Clear" — either of which destroys an
+     application in progress with no undo. Local hosts keep the tools
+     unconditionally; on a public host they now take a deliberate ?tools=1, so
+     the festival can still exercise the form without an applicant tripping
+     over it. */
+  var LOCAL_HOSTS = /^(localhost|127\.0\.0\.1|.*\.local)$/i;
+  var TOOLS_HOSTS = /^staging\.dcsketchfest\.com$/i;
+
+  function stagingToolsWanted() {
+    if (LOCAL_HOSTS.test(location.hostname)) return true;
+    if (!TOOLS_HOSTS.test(location.hostname)) return false;
+    try {
+      return new URLSearchParams(location.search).get('tools') === '1';
+    } catch (e) {
+      return false;
+    }
+  }
 
   function maybeShowStagingTools() {
-    if (!STAGING_HOSTS.test(location.hostname)) return;
+    if (!stagingToolsWanted()) return;
 
     var bar = document.createElement('div');
     bar.className = 'staging-tools';

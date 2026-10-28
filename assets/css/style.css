@@ -1031,9 +1031,83 @@ h5 {
   .press-copy .body-copy { padding: 1.25rem; }
 }
 
+/* ------------------------------------------------------------- venues --- */
+
+/* Two cards, side by side on a desktop and stacked on a phone. Equal-height
+   rows rather than auto, so the two names and night pairs line up with each
+   other instead of floating at whatever height their logo leaves them. */
+.venue-grid {
+  list-style: none;
+  margin: 3rem auto 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+}
+
+.venue-card {
+  border: var(--border);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  /* Pink, not blue: this section IS blue, and a blue shadow on it is a shadow
+     nobody can see. */
+  box-shadow: var(--shadow-offset) var(--shadow-offset) 0 var(--pink);
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+/* A fixed box for the mark. The two logos are nothing like the same shape --
+   Sitar's is tall, MILKCRATE's is square -- so sizing either by width or by
+   height alone makes one dwarf the other. A common box with object-fit lets
+   each fill what it can of the same area and keeps the pair balanced. */
+.venue-logo-wrap {
+  height: 9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.venue-logo {
+  max-height: 100%;
+  max-width: 70%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+
+.venue-card h3 { margin: 1.5rem 0 .5rem; }
+
+.venue-nights {
+  font-family: var(--font-body);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.venue-address {
+  font-family: var(--font-body);
+  font-size: .95rem;
+  line-height: 1.45;
+  margin-top: .75rem;
+  color: var(--ink);
+}
+
+/* The cards are a grid row, so one card gaining an address and the other not
+   does not make them different heights -- the shorter one just has more space
+   under its nights. Nothing to compensate for here. */
+
+.venue-note { margin-top: 2.5rem; }
+
+@media (max-width: 767px) {
+  .venue-grid { grid-template-columns: 1fr; gap: 1.5rem; }
+  .venue-logo-wrap { height: 7.5rem; }
+}
+
 /* -------------------------------------------------------------- venue --- */
 
-/* Stands in for the address and map while the 2027 venue is unsigned. */
+/* Unused since the 2027 rebuild dropped the venue panel from the homepage.
+   Kept because the venues (MILKCRATE and Sitar Arts Center) still have no
+   published addresses here, and this is the styling a panel would want the
+   day they do. Delete it if that panel never comes back. */
 .venue-tba {
   max-width: 42rem;
   margin: 2.5rem auto 0;

@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <!-- Google tag (gtag.js) -->
@@ -14,7 +15,6 @@
   gtag('config', 'G-5WTXCDDHMK');
 </script>
 <title>DC Sketchfest 2027 - Applications Open - March 31-April 3</title>
-<meta name="robots" content="noindex">
 <meta name="description" content="DC Sketchfest returns March 31 - April 3, 2027: four nights of sketch comedy in Washington, DC. Performer applications are open now and close December 13.">
 
 <meta property="og:type" content="website">
@@ -35,8 +35,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/css/style.css">
 
-<!-- No "location": the 2027 venue is unsigned, and a guessed or omitted-but-
-     implied address is worse than none. Add it once the venue is announced. -->
+<!-- Two venues, so "location" is an array. Names only: a guessed address is
+     worse than none, and neither street address is confirmed here yet. Add
+     "address" to each Place once they are. -->
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -46,7 +47,11 @@
   "startDate": "2027-03-31",
   "endDate": "2027-04-03",
   "description": "Four nights of sketch comedy in Washington, DC. DC's only sketch comedy festival brings dozens of troupes from across the US and Canada.",
-  "image": "https://dcsketchfest.com/assets/img/brand/og-2027.png"
+  "image": "https://dcsketchfest.com/assets/img/brand/og-2027.png",
+  "location": [
+    { "@type": "Place", "name": "MILKCRATE", "address": { "@type": "PostalAddress", "streetAddress": "4722 14th Street NW", "addressLocality": "Washington", "addressRegion": "DC", "postalCode": "20011", "addressCountry": "US" } },
+    { "@type": "Place", "name": "Sitar Arts Center", "address": { "@type": "PostalAddress", "streetAddress": "1700 Kalorama Road NW, Suite 101", "addressLocality": "Washington", "addressRegion": "DC", "postalCode": "20009", "addressCountry": "US" } }
+  ]
 }
 </script>
 </head>
@@ -125,11 +130,17 @@
     <div class="container--md container">
       <h2 class="h-lg text-center reveal">Apply for <span class="text-teal">2027</span></h2>
 
-      <p class="body-copy text-center">Wednesday, March 31 through Saturday, April 3, 2027 &mdash; four nights of sketch comedy in Washington, DC. Venue to be announced.</p>
+      <p class="body-copy text-center">Wednesday, March 31 through Saturday, April 3, 2027 &mdash; four nights of sketch comedy in Washington, DC, at MILKCRATE and Sitar Arts Center.</p>
 
       <!-- A table, not cards: the three windows differ only by date and price,
            so the comparison is the whole point. The "Open now" flag is hand
-           kept — move it to Standard on November 1 and to Late on November 30. -->
+           kept — move it to Standard on November 1 and to Late on November 30.
+
+           Early ends October 31 and Standard starts November 1, so no two
+           rows name the same date any more. Both used to say November 1,
+           which left anyone applying that day with no way to tell which
+           price was theirs. The Worker’s fee_early_until is what actually
+           decides the charge and has to agree with this table. -->
       <div class="fee-table-wrap">
         <table class="fee-table body-copy">
           <caption class="visually-hidden">DC Sketchfest 2027 application windows and fees</caption>
@@ -143,7 +154,7 @@
           <tbody>
             <tr class="fee-row is-open">
               <th scope="row">Early <span class="fee-flag">Open now</span></th>
-              <td>October 20 &ndash; November 1</td>
+              <td>October 20 &ndash; October 31</td>
               <td class="fee-price">$25</td>
             </tr>
             <tr class="fee-row">
@@ -199,6 +210,54 @@
 
   <div class="pad">
     <img class="food-blob" src="assets/img/characters/food-06.avif" alt="" loading="lazy" aria-hidden="true">
+  </div>
+</section>
+
+<!-- =========================================================== venues === -->
+<!-- Each address appears twice: once in the card, where a person reads it,
+     and once as a PostalAddress on the matching Place in the JSON-LD above,
+     which is what makes the venue resolve in search and maps rather than
+     being a bare name. Change one and change the other.
+
+     Both logos sit on their own paper card rather than straight on the blue:
+     Sitar's mark is red and MILKCRATE's is black, and neither is legible on a
+     saturated background. The card also gives two marks of very different
+     proportions (one tall, one square) a shared frame, which is what stops the
+     pair looking lopsided. -->
+<section id="venue-section" class="section section--teal">
+  <div class="pad pad-md">
+    <div class="container container--md">
+      <h2 class="h-lg text-center text-white reveal">Where</h2>
+      <p class="body-copy text-center text-white">Two venues, both in Washington, DC.</p>
+
+      <ul class="venue-grid">
+        <li class="venue-card reveal">
+          <div class="venue-logo-wrap">
+            <img class="venue-logo" src="/assets/img/venues/milkcrate.png"
+                 alt="MILKCRATE" width="545" height="600" loading="lazy">
+          </div>
+          <h3 class="h-sm">MILKCRATE</h3>
+          <p class="venue-nights">Wednesday, March&nbsp;31<br>Thursday, April&nbsp;1</p>
+          <p class="venue-address"><a class="link" target="_blank" rel="noopener"
+               href="https://www.google.com/maps/search/?api=1&amp;query=MILKCRATE+4722+14th+Street+NW+Washington+DC+20011">4722
+            14th Street NW<br>Washington, DC 20011</a></p>
+        </li>
+        <li class="venue-card reveal">
+          <div class="venue-logo-wrap">
+            <img class="venue-logo" src="/assets/img/venues/sitar-arts-center.png"
+                 alt="Sitar Arts Center" width="387" height="600" loading="lazy">
+          </div>
+          <h3 class="h-sm">Sitar Arts Center</h3>
+          <p class="venue-nights">Friday, April&nbsp;2<br>Saturday, April&nbsp;3</p>
+          <p class="venue-address"><a class="link" target="_blank" rel="noopener"
+               href="https://www.google.com/maps/search/?api=1&amp;query=Sitar+Arts+Center+1700+Kalorama+Road+NW+Washington+DC+20009">1700
+            Kalorama Road NW, Suite&nbsp;101<br>Washington, DC 20009</a></p>
+        </li>
+      </ul>
+
+      <p class="body-copy text-center text-white venue-note">Door times and ticket on-sales go out to the
+        <a class="link" href="#newsletter-section">mailing list</a> closer to the festival.</p>
+    </div>
   </div>
 </section>
 
@@ -382,12 +441,12 @@
 
           <details class="faq-item">
             <summary>Where is it happening?</summary>
-            <div class="faq-answer">The 2027 venue hasn't been announced yet. It will be in Washington, DC, as every festival has been. <a href="#newsletter-section">Join the mailing list</a> and we'll send it out as soon as it's signed.</div>
+            <div class="faq-answer">Two venues, both in Washington, DC. <strong>MILKCRATE</strong> hosts Wednesday, March 31 and Thursday, April 1. <strong>Sitar Arts Center</strong> hosts Friday, April 2 and Saturday, April 3. Addresses are in <a href="#venue-section">Where</a>; <a href="#newsletter-section">join the mailing list</a> for door times and ticket on-sales.</div>
           </details>
 
           <details class="faq-item">
             <summary>How do I apply to perform?</summary>
-            <div class="faq-answer">Applications are open now &mdash; fill out the <a href="/apply/">application form</a> and pay the fee for the window you're applying in: $25 through November 1, $30 from November 1 to November 29, and $40 from November 30 to December 13. DC sales tax and a card processing fee are added on top, and you'll see the full total before you enter a card. Applications close December 13, and an application isn't complete until the fee is paid.</div>
+            <div class="faq-answer">Applications are open now &mdash; fill out the <a href="/apply/">application form</a> and pay the fee for the window you're applying in: $25 through October 31, $30 from November 1 to November 29, and $40 from November 30 to December 13. DC sales tax and a card processing fee are added on top, and you'll see the full total before you enter a card. Applications close December 13, and an application isn't complete until the fee is paid.</div>
           </details>
 
           <details class="faq-item">
@@ -425,7 +484,7 @@
   <div class="pad pad-md">
     <div class="container--md container text-center reveal">
       <h2 class="h-xl text-white">Join <span class="text-yellow">DCSF</span></h2>
-      <h3 class="h-xs text-white" style="margin-top:1.5rem">Lineup news, ticket on-sales and the 2027 venue, straight to your inbox</h3>
+      <h3 class="h-xs text-white" style="margin-top:1.5rem">Lineup news, ticket on-sales and door times, straight to your inbox</h3>
 
       <!-- Signup posts to a Google Apps Script web app that appends a row to a
            Sheet. Paste the deployment URL into data-endpoint — see README

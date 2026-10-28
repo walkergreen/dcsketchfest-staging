@@ -43,8 +43,8 @@ PAGE = """<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{year} Lineup - DC Sketchfest</title>
 <meta name="description" content="The {count} sketch comedy teams who performed at DC Sketchfest {year}.">
 
@@ -78,6 +78,7 @@ PAGE = """<!DOCTYPE html>
         <a class="nav-link" href="/apply/">Apply</a>
         <a class="nav-link" href="/volunteer/">Volunteer</a>
         <a class="nav-link" href="/performers-{newest}/" aria-current="page">Past Lineups</a>
+        <a class="nav-link" href="/photos/">Photos</a>
         <a class="nav-link" href="/#faq-section">FAQ</a>
         <a class="nav-link" href="mailto:admin@dcsketchfest.com?subject=Question">Contact</a>
         <a class="nav-link nav-donate-mobile" href="https://givebutter.com/dcsketchfest2027">Donate</a>
@@ -103,7 +104,7 @@ PAGE = """<!DOCTYPE html>
 {years}
       </nav>
 
-      <p class="archive-note">DC Sketchfest returns March 31&ndash;April 3, 2027 &mdash; four nights of sketch comedy, venue to be announced. <a href="/apply/">Applications are open</a> through December 13.</p>
+      <p class="archive-note">DC Sketchfest returns March 31&ndash;April 3, 2027 &mdash; four nights of sketch comedy at MILKCRATE and Sitar Arts Center. <a href="/apply/">Applications are open</a> through December 13.</p>
     </div>
   </div>
 </section>
@@ -147,7 +148,6 @@ PAGE = """<!DOCTYPE html>
 </footer>
 
 <script src="/assets/js/main.js" defer></script>
-<div class="staging-tag">2027 rebrand · staging preview</div>
 </body>
 </html>
 """

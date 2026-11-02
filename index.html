@@ -148,6 +148,16 @@
            whatever is open when you commit and it still corrects itself for
            everyone whose browser can reach the Worker.
 
+           The inline display:none on the hidden flags is not redundant with the
+           stylesheet rule, and it is why this markup is safe to deploy. HTML and
+           assets both carry max-age=600 here, so for up to ten minutes after a
+           push a returning visitor can hold a cached style.css and main.js while
+           already being served this page. Without the inline style that visitor
+           sees all three rows claiming "Open now" -- worse than the stale flag
+           this replaced. The rule in style.css stays as the general fix for
+           [hidden] on this class; the inline style is what makes a row correct
+           with no new CSS and no JS at all.
+
            The prices stay hand-written. /apply/fee reports only the window that
            is open now, so the other two cannot be read from it, and copying the
            gross-up into this page would make it a second source of truth for a
@@ -164,7 +174,7 @@
           </thead>
           <tbody>
             <tr class="fee-row" data-fee-tier="early">
-              <th scope="row">Early <span class="fee-flag" hidden>Open now</span></th>
+              <th scope="row">Early <span class="fee-flag" hidden style="display:none">Open now</span></th>
               <td>October 20 &ndash; October 31</td>
               <td class="fee-price">$25</td>
             </tr>
@@ -174,7 +184,7 @@
               <td class="fee-price">$30</td>
             </tr>
             <tr class="fee-row" data-fee-tier="late">
-              <th scope="row">Late <span class="fee-flag" hidden>Open now</span></th>
+              <th scope="row">Late <span class="fee-flag" hidden style="display:none">Open now</span></th>
               <td>November 30 &ndash; December 13</td>
               <td class="fee-price">$40</td>
             </tr>

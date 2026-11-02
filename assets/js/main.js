@@ -65,7 +65,14 @@
           var flag = row.querySelector(".fee-flag");
           var isOpen = row === open;
           row.classList.toggle("is-open", isOpen);
-          if (flag) flag.hidden = !isOpen;
+          if (flag) {
+            // Both, because the markup hides a row two ways: the attribute for
+            // semantics, and an inline style so a cached stylesheet without the
+            // .fee-flag[hidden] rule still hides it. Clearing the inline value
+            // falls back to the class, which is inline-block.
+            flag.hidden = !isOpen;
+            flag.style.display = isOpen ? "" : "none";
+          }
         });
       })
       .catch(function () {

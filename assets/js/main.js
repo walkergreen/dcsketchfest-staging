@@ -22,6 +22,57 @@
     });
   }
 
+  /* ---------------------------------------------------------- fee window */
+
+  /* Which row of the application fee table wears the "Open now" flag.
+
+     The table ships all three flags with two hidden, and the served markup is
+     a real answer on its own -- this only corrects it. The Worker is what
+     actually prices an application, so the flag follows what /apply/fee says
+     is open rather than the calendar written into the page. Before this the
+     flag was hand-kept and it ran two days late: the table went on offering
+     $25 after the $30 window had opened, which is a price nobody could be
+     charged.
+
+     Anything unexpected leaves the markup alone. A failed request, a response
+     that is not ok, or a window this table does not list are all better served
+     by a flag that might be stale than by a table with no flag at all. */
+
+  var feeTable = document.querySelector("[data-fee-table]");
+
+  if (feeTable) {
+    fetch(
+      /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+        ? "http://localhost:8789/api/apply/fee"
+        : "https://dcsketchfest-app.walker-df2.workers.dev/api/apply/fee",
+      { headers: { accept: "application/json" } }
+    )
+      .then(function (res) { return res.ok ? res.json() : null; })
+      .then(function (fee) {
+        if (!fee || fee.ok !== true) return;
+
+        // A grace application is charged the late fee, so late stays the row
+        // to point at.
+        var tier = fee.tier === "grace" ? "late" : fee.tier;
+        var open = feeTable.querySelector('[data-fee-tier="' + tier + '"]');
+
+        // Open, but in a window this table has no row for: say nothing rather
+        // than flag the wrong one.
+        if (fee.open === true && !open) return;
+        if (fee.open !== true) open = null;
+
+        feeTable.querySelectorAll(".fee-row").forEach(function (row) {
+          var flag = row.querySelector(".fee-flag");
+          var isOpen = row === open;
+          row.classList.toggle("is-open", isOpen);
+          if (flag) flag.hidden = !isOpen;
+        });
+      })
+      .catch(function () {
+        // Offline, blocked, or the Worker is down. The served markup stands.
+      });
+  }
+
   /* ------------------------------------------------------------- sliders */
 
   document.querySelectorAll("[data-slider]").forEach(function (slider) {

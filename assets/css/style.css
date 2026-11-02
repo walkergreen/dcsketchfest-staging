@@ -649,6 +649,13 @@ h5 {
   vertical-align: .14em;
 }
 
+/* `display` above outranks the browser's own [hidden] rule, so the two rows
+   that are not the open one would show their flag anyway. The table ships all
+   three and hides two; this is what makes the hiding work. */
+.fee-flag[hidden] {
+  display: none;
+}
+
 .fee-price {
   font-family: var(--font-display);
   font-size: 1.35em;

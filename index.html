@@ -133,16 +133,27 @@
       <p class="body-copy text-center">Wednesday, March 31 through Saturday, April 3, 2027 &mdash; four nights of sketch comedy in Washington, DC, at MILKCRATE and Sitar Arts Center.</p>
 
       <!-- A table, not cards: the three windows differ only by date and price,
-           so the comparison is the whole point. The "Open now" flag is hand
-           kept — move it to Standard on November 1 and to Late on November 30.
+           so the comparison is the whole point.
 
-           Early ends October 31 and Standard starts November 1, so no two
-           rows name the same date any more. Both used to say November 1,
-           which left anyone applying that day with no way to tell which
-           price was theirs. The Worker’s fee_early_until is what actually
-           decides the charge and has to agree with this table. -->
+           Every row carries an "Open now" flag and all but one are hidden.
+           main.js un-hides whichever row the WORKER reports as open, because
+           the Worker is what actually prices an application: /apply/fee answers
+           with the live window, and the markup here is only the fallback for a
+           visitor whose request to it never lands.
+
+           The flag used to be hand-kept, with a note to move it on November 1
+           and again on November 30, and it was late the first time -- the table
+           went on offering $25 for two days after the $30 window opened, which
+           is a quoted price nobody could be charged. Set the un-hidden row to
+           whatever is open when you commit and it still corrects itself for
+           everyone whose browser can reach the Worker.
+
+           The prices stay hand-written. /apply/fee reports only the window that
+           is open now, so the other two cannot be read from it, and copying the
+           gross-up into this page would make it a second source of truth for a
+           number Stripe charges. -->
       <div class="fee-table-wrap">
-        <table class="fee-table body-copy">
+        <table class="fee-table body-copy" data-fee-table>
           <caption class="visually-hidden">DC Sketchfest 2027 application windows and fees</caption>
           <thead>
             <tr>
@@ -152,18 +163,18 @@
             </tr>
           </thead>
           <tbody>
-            <tr class="fee-row is-open">
-              <th scope="row">Early <span class="fee-flag">Open now</span></th>
+            <tr class="fee-row" data-fee-tier="early">
+              <th scope="row">Early <span class="fee-flag" hidden>Open now</span></th>
               <td>October 20 &ndash; October 31</td>
               <td class="fee-price">$25</td>
             </tr>
-            <tr class="fee-row">
-              <th scope="row">Standard</th>
+            <tr class="fee-row is-open" data-fee-tier="regular">
+              <th scope="row">Standard <span class="fee-flag">Open now</span></th>
               <td>November 1 &ndash; November 29</td>
               <td class="fee-price">$30</td>
             </tr>
-            <tr class="fee-row">
-              <th scope="row">Late</th>
+            <tr class="fee-row" data-fee-tier="late">
+              <th scope="row">Late <span class="fee-flag" hidden>Open now</span></th>
               <td>November 30 &ndash; December 13</td>
               <td class="fee-price">$40</td>
             </tr>

@@ -65,6 +65,9 @@ def live_form(markup):
             opts = [o[0] for o in (entry[1] or [])] if entry[1] else []
             found[str(entry[0])] = {
                 "title": it[1],
+                # entry[2] is Forms' own required flag. A required question the
+                # page cannot answer makes Google reject the whole response.
+                "required": bool(entry[2]) if len(entry) > 2 else False,
                 # An empty trailing option is how Forms marks an "Other" box.
                 "options": [o for o in opts if o],
                 "has_other": any(o == "" for o in opts),
@@ -133,8 +136,16 @@ def main():
                     f"First: {missing[0]!r}")
 
     for eid in sorted(set(live) - set(EXPECTED)):
-        notes.append(f"the form has a new question (entry.{eid}) the page does "
-                     f"not show: {live[eid]['title']!r}")
+        if live[eid]["required"]:
+            # Google rejects a response that omits a required answer, so this
+            # is not advisory: every sign-up the page sends is being discarded.
+            problems.append(
+                f"the form has a REQUIRED question (entry.{eid}) the page does "
+                f"not show, so every sign-up is being discarded: "
+                f"{live[eid]['title']!r}")
+        else:
+            notes.append(f"the form has a new question (entry.{eid}) the page "
+                         f"does not show: {live[eid]['title']!r}")
 
     for n in notes:
         print(f"NOTE: {n}")

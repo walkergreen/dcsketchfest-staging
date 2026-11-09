@@ -145,6 +145,23 @@
         if (allowed.indexOf(sent[id][i]) === -1) return "drifted";
       }
     }
+
+    /* The other direction. The loop above walks only the fields this page
+       posts, so a question ADDED to the form is invisible to it -- and if that
+       question is required, Google rejects every response this page sends and
+       the page would go on thanking people for sign-ups it threw away. That is
+       the exact failure this whole check exists to prevent.
+
+       Only required ids count. An added optional question costs one answer;
+       an added required one costs the entire response. A Worker too old to
+       report `required` yields [], which keeps the fail-open contract. */
+    var req = live.required || [];
+    for (var r = 0; r < req.length; r++) {
+      // sent[id] is [] for a text field the page does post, which is truthy,
+      // so this fires only where the page has no control for the question.
+      if (!sent[req[r]]) return "drifted";
+    }
+
     return null;
   }
 
@@ -205,7 +222,10 @@
   });
 
   sink.addEventListener("load", function () {
-    if (submitted) finish();
+    // `blocked` means the probe proved this sign-up would be discarded. The
+    // withdrawal notice is the honest outcome, so completing the POST must not
+    // replace it with a thank-you -- the row is gone either way.
+    if (submitted && !blocked) finish();
   });
 
   function finish() {

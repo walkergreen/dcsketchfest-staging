@@ -38,8 +38,8 @@
        this list with the real total instead of restating it per line. */
     deadlines: [
       'Early Application ($25) – October 20 to October 31.',
-      'Standard Application ($30) – November 1 to November 29.',
-      'Late Application ($40) – November 30 to December 13.'
+      'Standard Application ($30) – November 1 to November 30.',
+      'Late Application ($40) – December 1 to December 13.'
     ],
     deadline_close: 'Applications close December 13, 11:59 PM ET.',
 

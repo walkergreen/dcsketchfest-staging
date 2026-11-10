@@ -12,8 +12,12 @@ It fails loudly on every way the coupling can rot:
   * a question was added, removed or reordered, changing the entry ids
   * a checkbox option was reworded — Google rejects choice values it does not
     recognise, and rejects the whole response with it
-  * email collection was switched to "verified", which forces a Google sign-in
-    and blocks anonymous posting outright
+  * email collection was switched on, which forces a Google sign-in or adds a
+    required emailAddress field, blocking anonymous posting outright
+  * the "Other" box was removed from a question the page still offers one for,
+    which makes Google reject every response that uses it
+  * a free-text question became multiple choice, so the text the page posts is
+    no longer a value Google recognises
 
 Run it after anyone edits the form, and on a schedule if you want warning
 before a volunteer is lost rather than after:
@@ -100,13 +104,41 @@ def main():
         print(f"FAIL: {exc}")
         return 1
 
-    # "Verified" email collection forces a Google sign-in, which an anonymous
-    # POST from the page can never satisfy.
-    if re.search(r'"emailAddress"|emailCollectionType":\s*2', markup):
-        notes.append("email collection may have been switched on — verify "
-                     "anonymous submission still works")
+    # Email collection blocks anonymous posting outright: "verified" forces a
+    # Google sign-in, "responder input" adds a required emailAddress field the
+    # page does not send. Either way every response is discarded. The narrow
+    # markers below are the same two the Worker probe uses.
+    if re.search(r'name="emailAddress"|emailCollectionType"?\s*:\s*2', markup):
+        problems.append("email collection is switched on — anonymous posting "
+                        "from the page is blocked and every sign-up is discarded")
+    elif "emailAddress" in markup:
+        notes.append("the markup mentions emailAddress — check whether email "
+                     "collection was switched on")
 
-    page = page_fields(PAGE.read_text())
+    page_markup = PAGE.read_text()
+    page = page_fields(page_markup)
+
+    # Which questions the page offers an "Other" box for. The checkbox itself
+    # carries no name until it is ticked, so the companion free-text field is
+    # the only marker in the markup.
+    for eid in sorted(set(re.findall(
+            r'name="entry\.(\d+)\.other_option_response"', page_markup))):
+        if eid in live and not live[eid]["has_other"]:
+            problems.append(
+                f"entry.{eid} ({EXPECTED.get(eid, {}).get('label', '?')}): the page "
+                f"offers an Other box and the form no longer has one — Google "
+                f"rejects __other_option__ and discards the whole response")
+
+    # A question that was free text when the page was built and is a choice
+    # list now. Whatever a visitor types is not an option Google recognises.
+    for eid, spec in EXPECTED.items():
+        if spec["choices"]:
+            continue
+        if eid in live and live[eid]["options"]:
+            problems.append(
+                f"entry.{eid} ({spec['label']}): the form now constrains this to "
+                f"a list of {len(live[eid]['options'])} option(s), and the page "
+                f"posts free text — Google rejects the response")
 
     for eid, spec in EXPECTED.items():
         if eid not in page:

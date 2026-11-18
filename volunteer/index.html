@@ -55,17 +55,20 @@
   <div class="pad pad-md">
     <div class="container container--md">
 
-      <!-- Posts straight to the Google Form behind
-           "DCSF 2027 Pre-Festival Volunteer Sign Up", so a submission here is
-           an ordinary form response: Google writes the row, the timestamp and
-           the column mapping into the linked responses sheet itself. Field
-           names are the form's own entry IDs and must not be renamed.
-           The POST targets the hidden iframe below because Google's endpoint
-           sends no CORS headers; the iframe's load event is the only signal
-           the browser is allowed to see. -->
+      <!-- Sign-ups go to the festival's Worker, which relays them into the
+           Google Form behind "DCSF 2027 Pre-Festival Volunteer Sign Up", so
+           Google still writes each response into the linked responses sheet.
+           Field names are the form's own entry IDs and must not be renamed.
+           assets/js/volunteer.js sends the form; the action below is only
+           where a browser without JavaScript would post, and the relay
+           refuses that (it needs the ticket the script collects), which is
+           why the noscript note points at email instead. The Google Form's
+           own address is deliberately not on this page: bots harvested it
+           from here and flooded the sheet. -->
+      <noscript><p class="body-copy">This form needs JavaScript. You can also email <a href="mailto:admin@dcsketchfest.com?subject=Volunteering%20with%20DC%20Sketchfest">admin@dcsketchfest.com</a> and we&rsquo;ll add you by hand.</p></noscript>
       <form id="volunteer-form" class="apply-form" method="POST"
-            action="https://docs.google.com/forms/d/e/1FAIpQLSf3IQ2f6wrhQe0cdu_0TbGnJo70_1DNCT-iABmTUIySwugE0w/formResponse"
-            target="gform-sink" novalidate>
+            action="https://dcsketchfest-app.walker-df2.workers.dev/api/volunteer/signup"
+            novalidate>
 
         <!-- Bots fill hidden fields; humans never see this one. -->
         <p class="hp" aria-hidden="true"><label>Leave this empty <input type="text" name="website" tabindex="-1" autocomplete="off"></label></p>
@@ -136,12 +139,6 @@
 
       <div id="done" class="done" hidden></div>
 
-      <!-- Submission target. Keeps the page put instead of handing the
-           visitor Google's own confirmation screen. -->
-      <iframe name="gform-sink" id="gform-sink" title="Form submission target"
-              style="position:absolute;left:-9999px;width:1px;height:1px;border:0"
-              aria-hidden="true" tabindex="-1"></iframe>
-
     </div>
   </div>
 </section>
@@ -164,6 +161,8 @@
 </footer>
 
 <script src="/assets/js/main.js" defer></script>
-<script src="/assets/js/volunteer.js" defer></script>
+<!-- Versioned so this markup never runs against a cached copy of the
+     pre-relay script, which expects the Google iframe this page dropped. -->
+<script src="/assets/js/volunteer.js?v=relay1" defer></script>
 </body>
 </html>

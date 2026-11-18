@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Verify that /volunteer/ still matches the Google Form it posts into.
 
-The volunteer page submits straight to the form's formResponse endpoint, and
-Google answers 200 whether or not it stored anything. A visitor therefore sees
-"You're signed up" even when the response was thrown away, so nothing on the
-page can notice a break. This script is that missing signal.
+The volunteer page's sign-ups reach the form through the Worker's relay, which
+posts to the form's formResponse endpoint and adds the answer to a gate
+question ("Website check") that only it knows, so bots posting straight to
+Google are rejected. The relay can now read Google's verdict, but a question
+renamed since the page was built still lands as a row with that answer
+silently dropped, and the page's status check only decides whether to accept a
+sign-up. This script says WHAT broke.
 
 It fails loudly on every way the coupling can rot:
 
@@ -48,6 +51,14 @@ EXPECTED = {
     "1623177207": {"label": "meeting days",    "choices": True},
     "12081110":   {"label": "past feedback",   "choices": False},
     "1994531496": {"label": "anything else",   "choices": False},
+}
+
+# Questions the relay answers itself, never the page. The gate must stay
+# required: while it is optional, a bot posting straight to Google is stored.
+# Its expected VALUE lives only in the Worker (src/index.js, VOLUNTEER_GATE),
+# not in this public repo.
+RELAY_FILLED = {
+    "468560159": "website check (the relay fills it in)",
 }
 
 
@@ -167,7 +178,18 @@ def main():
                     f"{len(missing)} option(s) the page does not offer. "
                     f"First: {missing[0]!r}")
 
-    for eid in sorted(set(live) - set(EXPECTED)):
+    for eid, label in RELAY_FILLED.items():
+        if eid not in live:
+            problems.append(
+                f"the gate question entry.{eid} ({label}) is gone from the form, "
+                f"so bots posting straight to Google are stored again. Re-add it "
+                f"and update VOLUNTEER_GATE in the Worker to its new entry id")
+        elif not live[eid]["required"]:
+            problems.append(
+                f"the gate question entry.{eid} ({label}) is not required, so "
+                f"bots posting straight to Google are stored again")
+
+    for eid in sorted(set(live) - set(EXPECTED) - set(RELAY_FILLED)):
         if live[eid]["required"]:
             # Google rejects a response that omits a required answer, so this
             # is not advisory: every sign-up the page sends is being discarded.

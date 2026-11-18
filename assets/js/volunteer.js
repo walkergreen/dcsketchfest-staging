@@ -1,22 +1,26 @@
 /* Volunteer sign-up form.
  *
- * The form posts natively to the Google Form's formResponse endpoint through a
- * hidden iframe, so Google itself writes the response row into the linked
- * sheet. That endpoint sends no CORS headers, so the response body is
- * unreadable by design; the iframe's load event is the only completion signal
- * available, and it cannot distinguish a stored response from a rejected one.
- * Validation therefore happens here, before the POST goes out.
+ * Sign-ups go to the Worker's relay (POST /api/volunteer/signup), which
+ * forwards them into the Google Form behind this page, so Google still writes
+ * each response into the organisers' sheet. The page used to post straight to
+ * Google's formResponse endpoint, which put the form id and every entry id in
+ * public markup; bots replayed that template directly at Google, where nothing
+ * on this page ever ran, and flooded the sheet. The form now has a required
+ * "Website check" question that only the relay answers, so a post made
+ * straight to Google is rejected.
  *
- * Because success is unreadable, this page used to thank every visitor
- * unconditionally -- including when the form was closed or had been edited out
- * from under it, which Google answers 200 and discards. It cannot learn the
- * fate of a response it has already sent, so instead it asks the Worker what
- * the form currently accepts BEFORE anyone fills it in, and withdraws the form
- * when the answer proves a sign-up would be thrown away.
+ * Going through the relay also fixes the old blind spot. Google's endpoint
+ * sends no CORS headers, so the browser could never tell a stored response
+ * from a rejected one and thanked everyone. The relay reads Google's answer
+ * and passes it back, so this page thanks people only for sign-ups Google kept.
  *
- * It withdraws only on proof. A probe that fails, or cannot tell, leaves the
- * form exactly as it was: the failure this guards against is silent data loss,
- * and refusing sign-ups because Google reshaped a page would be worse.
+ * The relay wants a ticket the Worker issues with every answer from the
+ * status check below, and refuses one less than a few seconds old, so a
+ * crawler that submits the form without running this script gets nowhere.
+ *
+ * The status check still runs before anyone fills the form in, and withdraws
+ * it when the answer proves a sign-up would be thrown away. It withdraws only
+ * on proof: a check that fails, or cannot tell, leaves the form as it was.
  */
 (function () {
   "use strict";
@@ -26,7 +30,6 @@
 
   var errors = document.getElementById("errors");
   var done = document.getElementById("done");
-  var sink = document.getElementById("gform-sink");
   var submitBtn = document.getElementById("submit");
   var clearBtn = document.getElementById("clear");
   var otherBox = document.getElementById("area-other");
@@ -44,9 +47,30 @@
      check fail-open before then. */
   var liveSeen = null;
 
-  var STATUS_URL = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
-    ? "http://localhost:8789/api/volunteer/form"
-    : "https://dcsketchfest-app.walker-df2.workers.dev/api/volunteer/form";
+  var API = /^(localhost|127\.0\.0\.1)$/.test(location.hostname)
+    ? "http://localhost:8789/api/volunteer/"
+    : "https://dcsketchfest-app.walker-df2.workers.dev/api/volunteer/";
+  var STATUS_URL = API + "form";
+  var SIGNUP_URL = API + "signup";
+
+  /* The relay refuses a ticket younger than this, so instant fills are
+     turned away. Measured on this browser's own clock from when the ticket
+     arrived, since the visitor's clock and the Worker's may disagree; the
+     margin over the Worker's 3 seconds absorbs the network trip. */
+  var TICKET_MIN_MS = 3500;
+  /* The earliest ticket this visit was given. The status check runs again at
+     submit, and its fresh ticket would be too new to use, so the first one is
+     kept for as long as the relay accepts it. */
+  var ticket = null;
+  var ticketAt = 0;
+  var TICKET_KEEP_MS = 11 * 3600 * 1000;
+
+  function keepTicket(live) {
+    if (!live || typeof live.ticket !== "string") return;
+    if (ticket && Date.now() - ticketAt < TICKET_KEEP_MS) return;
+    ticket = live.ticket;
+    ticketAt = Date.now();
+  }
 
   /* The only question with an Other box. Named once so the submit wiring and
      the liveness check cannot disagree about which question that is. */
@@ -240,7 +264,11 @@
        an added required one costs the entire response. A Worker too old to
        report `required` yields [], which keeps the fail-open contract. */
     var req = live.required || [];
+    var relay = live.relay || [];
     for (var r = 0; r < req.length; r++) {
+      // The relay answers these itself (the gate question), so the page having
+      // no control for them is the design, not drift.
+      if (relay.indexOf(req[r]) !== -1) continue;
       // sent[id] is [] for a text field the page does post, which is truthy,
       // so this fires only where the page has no control for the question.
       if (!sent[req[r]]) return "drifted";
@@ -297,112 +325,169 @@
       }
       fetch(STATUS_URL, { headers: { accept: "application/json" } })
         .then(function (res) { return res.ok ? res.json() : null; })
-        .then(settle)
+        .then(function (body) {
+          // An answer that lands after the timeout is too late to judge the
+          // form by, but its ticket is still good, and without one the relay
+          // refuses the sign-up. Keep it either way.
+          keepTicket(body);
+          settle(body);
+        })
         .catch(function () { settle(null); });
     });
   }
 
   probe(8000).then(function (live) {
     if (live) liveSeen = live;
+    keepTicket(live);
     var kind = breakage(live);
     if (kind) withdraw(kind);
   });
 
   /* ----------------------------------------------------------- submit --- */
 
-  var submitted = false;
-  var revalidated = false;
+  var sending = false;
+
+  /* What went wrong, in words a volunteer can act on. Every one of these ends
+     in the same place, the admin inbox, because a sign-up that did not land is
+     exactly what the organisers need to hear about. */
+  var FAILED = {
+    rejected: "The volunteer form didn’t accept this sign-up, so it wasn’t saved.",
+    busy: "We’ve had a lot of sign-ups from your network in the last hour, so this one wasn’t sent. Try again later.",
+    ticket: "This page couldn’t confirm the sign-up came from here. Reload the page and try again.",
+    unavailable: "We couldn’t reach the sign-up service just now, so this sign-up wasn’t saved. Try again in a minute."
+  };
+
+  function showFailure(reason) {
+    errors.hidden = false;
+    errors.innerHTML = "<p>" + (FAILED[reason] || FAILED.unavailable) +
+      " If it keeps happening, email <a href=\"mailto:admin@dcsketchfest.com?subject=Volunteering%20with%20DC%20Sketchfest\">admin@dcsketchfest.com</a> and we’ll add you by hand.</p>";
+    errors.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  /* The answers as the relay wants them: entry.<id> -> [values]. Built from
+     the form's own controls, so the markup stays the one record of what this
+     page posts. Unticked boxes and the honeypot are left out, as a native
+     post would leave them out. */
+  function collect() {
+    var fields = {};
+    form.querySelectorAll("[name]").forEach(function (el) {
+      var name = el.getAttribute("name") || "";
+      if (!/^entry\./.test(name) || el.disabled) return;
+      var type = String(el.type || "").toLowerCase();
+      if ((type === "checkbox" || type === "radio") && !el.checked) return;
+      (fields[name] = fields[name] || []).push(String(el.value || ""));
+    });
+    return fields;
+  }
+
+  function wait(ms) {
+    return new Promise(function (resolve) { setTimeout(resolve, Math.max(0, ms)); });
+  }
+
+  /* POST to the relay and resolve to its verdict: { ok } or { ok:false,
+     reason }. Never rejects, so the caller always gets the button back. */
+  function send() {
+    /* No ticket yet: both status checks timed out. The relay will refuse a
+       sign-up without one, so make one longer attempt before saying so. */
+    if (!ticket) {
+      return probe(15000).then(function (live) {
+        keepTicket(live);
+        return ticket ? send() : { ok: false, reason: "ticket" };
+      });
+    }
+    var payload = JSON.stringify({ fields: collect(), ticket: ticket, website: form.website.value });
+    return wait(TICKET_MIN_MS - (Date.now() - ticketAt)).then(function () {
+      var controller = typeof AbortController === "function" ? new AbortController() : null;
+      var timer = setTimeout(function () { if (controller) controller.abort(); }, 20000);
+      return fetch(SIGNUP_URL, {
+        method: "POST",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: payload,
+        signal: controller ? controller.signal : undefined
+      })
+        .then(function (res) {
+          return res.json().catch(function () { return null; }).then(function (body) {
+            clearTimeout(timer);
+            if (body && body.ok === true) return { ok: true };
+            return { ok: false, reason: (body && body.reason) || "unavailable" };
+          });
+        })
+        .catch(function () {
+          clearTimeout(timer);
+          return { ok: false, reason: "unavailable" };
+        });
+    });
+  }
 
   form.addEventListener("submit", function (ev) {
-    // The probe can land after someone has already started typing, so this is
-    // checked here as well as at withdrawal.
-    if (blocked) {
-      ev.preventDefault();
-      return;
-    }
+    // Nothing goes to Google from the browser any more: the relay sends it.
+    ev.preventDefault();
+    if (blocked || sending) return;
 
     // A honeypot hit is dropped silently: bots get the same screen humans do.
     if (form.website.value) {
-      ev.preventDefault();
       finish();
       return;
     }
 
-    if (showErrors(validate())) {
-      ev.preventDefault();
-      return;
+    if (showErrors(validate())) return;
+
+    var label = submitBtn.querySelector("span");
+    var wording = label.textContent;
+    sending = true;
+    submitBtn.disabled = true;
+    label.textContent = "Checking…";
+
+    function restore() {
+      sending = false;
+      submitBtn.disabled = false;
+      label.textContent = wording;
     }
 
-    if (!revalidated) {
-      /* The probe answered when the page loaded, which may have been an hour
-         ago. The form being closed or edited since then is invisible to that
-         answer, and this is the one moment where being wrong costs a real
-         sign-up. So ask once more, briefly.
-
-         Fails open on purpose: if the check cannot answer within four seconds
-         the sign-up goes out exactly as it would have. Waiting longer would
-         trade a certain cost, visitors giving up on a stuck button, against an
-         unlikely one. */
-      ev.preventDefault();
-      var label = submitBtn.querySelector("span");
-      var wording = label.textContent;
-      submitBtn.disabled = true;
-      label.textContent = "Checking…";
-      probe(4000).then(function (live) {
-        if (live) liveSeen = live;
-        var kind = breakage(live);
-        if (kind) {
-          // withdraw() hides the form, so the button is not restored.
-          withdraw(kind);
+    /* The status check answered when the page loaded, which may have been an
+       hour ago. Ask once more, briefly, since this is the one moment where
+       being wrong costs a real sign-up. Fails open: no answer within four
+       seconds and the sign-up goes ahead on the ticket from page load (or,
+       if there is none, send() makes one longer attempt to get one), and
+       the relay's own verdict is still the last word. */
+    probe(4000).then(function (live) {
+      if (live) liveSeen = live;
+      keepTicket(live);
+      var kind = breakage(live);
+      if (kind) {
+        // withdraw() hides the form, so the button is not restored.
+        withdraw(kind);
+        return null;
+      }
+      // The fresh answer may have marked another question required.
+      if (showErrors(validate())) {
+        restore();
+        return null;
+      }
+      label.textContent = "Sending…";
+      return send();
+    })
+      .then(function (verdict) {
+        if (!verdict) return;
+        if (verdict.ok) {
+          finish();
           return;
         }
-        submitBtn.disabled = false;
-        label.textContent = wording;
-        // The fresh answer may have marked another question required.
-        if (showErrors(validate())) return;
-        revalidated = true;
-        if (typeof form.requestSubmit === "function") {
-          // Re-fires this handler, which now takes the branch below.
-          form.requestSubmit();
-        } else {
-          /* NOT form.submit(). HTMLFormElement exposes every listed element by
-             its id as a named property, and [LegacyOverrideBuiltIns] makes that
-             own property shadow the prototype method -- so with
-             <button type="submit" id="submit"> in the markup, `form.submit` IS
-             that button and calling it throws. The same named getter is what
-             makes `form.website` work for the honeypot above, so this form
-             definitely has it. Reaching past the shadow is the one-line fix.
-
-             This path also skips the submit event, so it does its own
-             bookkeeping. */
-          submitted = true;
-          submitBtn.disabled = true;
-          label.textContent = "Sending…";
-          HTMLFormElement.prototype.submit.call(form);
+        if (verdict.reason === "closed") {
+          withdraw("closed");
+          return;
         }
+        // A spent or missing ticket is replaced on the next try.
+        if (verdict.reason === "ticket") ticket = null;
+        restore();
+        showFailure(verdict.reason);
       })
       .catch(function () {
-        /* Nothing in the chain above is expected to throw, but a dead button
-           with no way back is the worst outcome on this page: the visitor has
-           filled the form and has no thank-you, no error and no retry. Hand
-           them a working button instead and let the next click try again. */
-        submitBtn.disabled = false;
-        label.textContent = wording;
+        /* Nothing above is expected to throw, but a dead button with no way
+           back is the worst outcome on this page. */
+        restore();
+        showFailure("unavailable");
       });
-      return;
-    }
-
-    submitted = true;
-    submitBtn.disabled = true;
-    submitBtn.querySelector("span").textContent = "Sending…";
-    // The native POST proceeds into the hidden iframe from here.
-  });
-
-  sink.addEventListener("load", function () {
-    // `blocked` means the probe proved this sign-up would be discarded. The
-    // withdrawal notice is the honest outcome, so completing the POST must not
-    // replace it with a thank-you -- the row is gone either way.
-    if (submitted && !blocked) finish();
   });
 
   function finish() {
